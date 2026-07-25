@@ -27,23 +27,25 @@ npm run dev      # http://localhost:3000
 npm run build    # static export → ./out
 ```
 
-## Deployment — Cloudflare Pages (via GitHub)
+## Deployment — Cloudflare Workers (via GitHub)
 
-This project builds to a fully static `out/` directory. Connect the GitHub repo
-in the Cloudflare dashboard (**Workers & Pages → Create → Pages → Connect to
-Git**) with these build settings:
+This project builds to a fully static `out/` directory that is served as a
+Workers **static-assets** deployment (no server runtime). Config lives in
+[`wrangler.jsonc`](./wrangler.jsonc), which points `assets.directory` at `./out`.
 
-| Setting                  | Value                              |
-| ------------------------ | ---------------------------------- |
-| Framework preset         | Next.js (Static HTML Export)       |
-| Build command            | `npx next build`                   |
-| Build output directory   | `out`                              |
-| Root directory           | `/` (default)                      |
-| Environment variable     | `NODE_VERSION` = `20`              |
+Connected in the Cloudflare dashboard (**Workers & Pages → Create → Workers →
+Connect to Git**) with:
+
+| Setting              | Value                 |
+| -------------------- | --------------------- |
+| Build command        | `npx next build`      |
+| Deploy command       | `npx wrangler deploy` |
+| Environment variable | `NODE_VERSION` = `20` |
 
 The Node version is also pinned via [`.nvmrc`](./.nvmrc). Every push to the
 default branch triggers an automatic build and deploy to the project's
-`*.pages.dev` URL.
+`*.workers.dev` URL. The Worker name in `wrangler.jsonc` must match the Worker
+the build is attached to.
 
 ## Project structure
 
