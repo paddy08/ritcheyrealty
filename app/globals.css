@@ -1,0 +1,68 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    @apply bg-cream text-charcoal font-sans;
+  }
+
+  /* Respect users who prefer reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer components {
+  .container-edge {
+    @apply mx-auto w-full max-w-content px-6 sm:px-8 lg:px-12;
+  }
+
+  .eyebrow {
+    @apply font-sans text-xs uppercase tracking-widest text-sage-deep;
+  }
+
+  /* Buttons */
+  .btn {
+    @apply inline-flex items-center justify-center rounded-full px-7 py-3 text-sm font-medium
+      tracking-wide transition-colors duration-200 focus-visible:outline-none
+      focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2
+      focus-visible:ring-offset-cream;
+  }
+
+  .btn-primary {
+    @apply btn bg-charcoal text-cream hover:bg-charcoal-soft;
+  }
+
+  .btn-outline {
+    @apply btn border border-charcoal/25 text-charcoal hover:border-charcoal hover:bg-charcoal hover:text-cream;
+  }
+}
+
+/* Hide scrollbar for the horizontal testimonial track while keeping it scrollable */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
