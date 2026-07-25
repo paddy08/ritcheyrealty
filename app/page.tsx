@@ -11,7 +11,7 @@ export default function HomePage() {
   return (
     <>
       {/* ---------- Hero: full-bleed video, centered title + search ---------- */}
-      <section className="relative isolate flex min-h-screen items-center justify-center overflow-hidden">
+      <section className="relative isolate flex min-h-dvh items-center justify-center overflow-hidden">
         {/* Full-bleed background video */}
         <div className="absolute inset-0 -z-10">
           <video
