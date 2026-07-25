@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { nav, site } from "@/lib/site";
 
@@ -7,8 +8,14 @@ export function Footer() {
       <div className="container-edge grid gap-12 py-16 md:grid-cols-[1.4fr_1fr_1fr]">
         {/* Brand */}
         <div>
-          <p className="font-serif text-2xl">Ritchey Realty</p>
-          <p className="mt-4 max-w-sm text-sm leading-relaxed text-cream/70">
+          <Image
+            src="/logo.webp"
+            alt="Ritchey Realty"
+            width={440}
+            height={404}
+            className="h-auto w-36"
+          />
+          <p className="mt-5 max-w-sm text-sm leading-relaxed text-cream/70">
             Boutique real estate guidance for buyers and sellers across Fort
             Worth and the greater DFW metroplex.
           </p>

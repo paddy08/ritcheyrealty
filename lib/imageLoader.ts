@@ -13,6 +13,10 @@ type LoaderArgs = {
 };
 
 export default function unsplashLoader({ src, width, quality }: LoaderArgs) {
+  // Local static assets (in /public) are already optimized and served as-is;
+  // they aren't absolute URLs, so skip the Unsplash resizing logic.
+  if (!/^https?:\/\//.test(src)) return src;
+
   const url = new URL(src);
   url.searchParams.set("auto", "format");
   url.searchParams.set("fit", "crop");

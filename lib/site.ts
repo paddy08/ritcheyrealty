@@ -163,6 +163,43 @@ export const communities: Community[] = [
   },
 ];
 
+// Placeholder community imagery (Unsplash). Base URLs — the custom loader adds
+// sizing. Swap for local/AI-generated assets before a real launch.
+export const communityImages: Record<string, { src: string; alt: string }> = {
+  "Fort Worth": {
+    src: "https://images.unsplash.com/photo-1570129477492-45c003edd2be",
+    alt: "Sample imagery: a warm two-story home at dusk",
+  },
+  Southlake: {
+    src: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c",
+    alt: "Sample imagery: a modern white farmhouse",
+  },
+  Keller: {
+    src: "https://images.unsplash.com/photo-1568605114967-8130f3a36994",
+    alt: "Sample imagery: a brick home with a covered porch",
+  },
+  Grapevine: {
+    src: "https://images.unsplash.com/photo-1449844908441-8829872d2607",
+    alt: "Sample imagery: a suburban home exterior",
+  },
+  "North Richland Hills": {
+    src: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750",
+    alt: "Sample imagery: an aerial view of a residential neighborhood",
+  },
+  Roanoke: {
+    src: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688",
+    alt: "Sample imagery: a bright, open interior",
+  },
+  Haslet: {
+    src: "https://images.unsplash.com/photo-1580587771525-78b9dba3b914",
+    alt: "Sample imagery: a single-story home with a manicured lawn",
+  },
+  Saginaw: {
+    src: "https://images.unsplash.com/photo-1512915922686-57c11dde9b6b",
+    alt: "Sample imagery: a cozy suburban street",
+  },
+};
+
 export type Testimonial = {
   id: string;
   quote: string;

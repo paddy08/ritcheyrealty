@@ -53,7 +53,7 @@ function FeatureCard({ listing }: { listing: Listing }) {
 /** Compact horizontal card — image beside text, breaks the uniform grid. */
 function CompactCard({ listing }: { listing: Listing }) {
   return (
-    <article className="group flex items-stretch gap-4 overflow-hidden rounded-2xl bg-cream-deep/70 p-3 ring-1 ring-charcoal/5 transition-shadow duration-300 hover:shadow-[0_16px_36px_-26px_rgba(43,42,38,0.5)]">
+    <article className="group flex items-stretch gap-4 overflow-hidden rounded-2xl bg-cream-deep/70 p-3 ring-1 ring-charcoal/5 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_16px_36px_-26px_rgba(43,42,38,0.5)]">
       <div className="relative aspect-square w-28 flex-none overflow-hidden rounded-xl sm:w-32">
         <Image
           src={listing.image}
@@ -104,13 +104,13 @@ export function FeaturedListings({ listings }: { listings: Listing[] }) {
       </Reveal>
 
       <div className="mt-12 grid gap-6 lg:grid-cols-12">
-        <Reveal className="lg:col-span-7" delay={60}>
+        <Reveal className="min-w-0 lg:col-span-7" delay={60}>
           <div className="h-full">
             <FeatureCard listing={feature} />
           </div>
         </Reveal>
 
-        <div className="flex flex-col gap-6 lg:col-span-5">
+        <div className="flex min-w-0 flex-col gap-6 lg:col-span-5">
           {rest.map((listing, i) => (
             <Reveal key={listing.id} delay={120 + i * 90}>
               <CompactCard listing={listing} />

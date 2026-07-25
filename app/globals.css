@@ -56,6 +56,63 @@
   .btn-outline {
     @apply btn border border-charcoal/25 text-charcoal hover:border-charcoal hover:bg-charcoal hover:text-cream;
   }
+
+  /* iOS-style frosted dark glass: translucent charcoal tint, heavy blur,
+     glossy top highlight + soft drop shadow. Content on top should be light. */
+  .glass {
+    @apply border border-white/10 bg-charcoal/50 backdrop-blur-xl backdrop-saturate-150 supports-[backdrop-filter]:bg-charcoal/40;
+    box-shadow:
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.14),
+      0 24px 50px -28px rgba(0, 0, 0, 0.55);
+  }
+
+  /* Dark scrim to seat glass panels over background imagery. */
+  .glass-scrim {
+    @apply absolute inset-0 bg-gradient-to-b from-charcoal/70 via-charcoal/55 to-charcoal/75;
+  }
+
+  /* Frosted glassmorphism for the hero search bar — translucent white over
+     the video, heavy blur, specular top highlight and soft drop shadow. */
+  .glass-search {
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    background: rgba(255, 255, 255, 0.12);
+    -webkit-backdrop-filter: blur(20px) saturate(140%);
+    backdrop-filter: blur(20px) saturate(140%);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.35),
+      0 20px 55px -22px rgba(0, 0, 0, 0.65);
+  }
+
+  /* Header nav links: gentle magnification plus a thin underline that draws
+     in from the left on hover; the underline stays in for the current page. */
+  .nav-link {
+    @apply relative py-1 transition-[color,transform] duration-200 ease-out;
+  }
+  .nav-link:hover {
+    transform: scale(1.1);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .nav-link:hover {
+      transform: none;
+    }
+  }
+  .nav-link::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -2px;
+    height: 1px;
+    background: currentColor;
+    opacity: 0.7;
+    transform: scaleX(0);
+    transform-origin: left center;
+    transition: transform 260ms cubic-bezier(0.22, 0.61, 0.36, 1);
+  }
+  .nav-link:hover::after,
+  .nav-link-active::after {
+    transform: scaleX(1);
+  }
 }
 
 /* Hide scrollbar for the horizontal testimonial track while keeping it scrollable */

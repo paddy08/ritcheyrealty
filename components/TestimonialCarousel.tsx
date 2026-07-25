@@ -26,20 +26,20 @@ export function TestimonialCarousel({ items }: { items: Testimonial[] }) {
             key={t.id}
             data-card
             role="listitem"
-            className="w-[85%] flex-none snap-start rounded-2xl bg-cream p-8 ring-1 ring-charcoal/10 sm:w-[60%] lg:w-[calc(50%-12px)]"
+            className="glass w-[85%] flex-none snap-start rounded-2xl p-8 text-cream sm:w-[60%] lg:w-[calc(50%-12px)]"
           >
             <span
               aria-hidden="true"
-              className="font-serif text-5xl leading-none text-sage"
+              className="font-serif text-5xl leading-none text-sage-pale"
             >
               &ldquo;
             </span>
-            <blockquote className="mt-2 font-serif text-lg leading-relaxed text-charcoal-soft">
+            <blockquote className="mt-2 font-serif text-lg leading-relaxed text-cream/90">
               {t.quote}
             </blockquote>
-            <figcaption className="mt-6 border-t border-charcoal/10 pt-4">
-              <p className="text-sm font-medium text-charcoal">{t.name}</p>
-              <p className="text-xs uppercase tracking-widest text-sage-deep">
+            <figcaption className="mt-6 border-t border-white/15 pt-4">
+              <p className="text-sm font-medium text-cream">{t.name}</p>
+              <p className="text-xs uppercase tracking-widest text-sage-pale">
                 {t.detail}
               </p>
             </figcaption>
@@ -53,7 +53,7 @@ export function TestimonialCarousel({ items }: { items: Testimonial[] }) {
           type="button"
           onClick={() => scrollByCard(-1)}
           aria-label="Previous testimonial"
-          className="flex h-11 w-11 items-center justify-center rounded-full border border-charcoal/20 text-charcoal transition-colors hover:border-charcoal hover:bg-charcoal hover:text-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2"
+          className="flex h-11 w-11 items-center justify-center rounded-full border border-cream/30 text-cream transition-colors hover:bg-cream hover:text-charcoal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cream focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
         >
           <span aria-hidden="true">&larr;</span>
         </button>
@@ -61,7 +61,7 @@ export function TestimonialCarousel({ items }: { items: Testimonial[] }) {
           type="button"
           onClick={() => scrollByCard(1)}
           aria-label="Next testimonial"
-          className="flex h-11 w-11 items-center justify-center rounded-full border border-charcoal/20 text-charcoal transition-colors hover:border-charcoal hover:bg-charcoal hover:text-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2"
+          className="flex h-11 w-11 items-center justify-center rounded-full border border-cream/30 text-cream transition-colors hover:bg-cream hover:text-charcoal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cream focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
         >
           <span aria-hidden="true">&rarr;</span>
         </button>
