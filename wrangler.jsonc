@@ -1,0 +1,13 @@
+{
+  // Cloudflare Workers config for serving the static Next.js export.
+  // `npx next build` produces ./out (output: "export"); this deploys that
+  // folder as a static-assets Worker (no server code needed).
+  "name": "ritcheyrealty",
+  "compatibility_date": "2025-07-01",
+  "assets": {
+    "directory": "./out",
+    // Serve out/404.html for unknown paths; "auto-trailing-slash" html
+    // handling maps /about -> about.html for the pages we add later.
+    "not_found_handling": "404-page"
+  }
+}
