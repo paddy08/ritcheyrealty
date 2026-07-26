@@ -13,10 +13,15 @@ export function ListingCard({
   listing,
   priority = false,
   muted = false,
+  focusable = true,
 }: {
   listing: Listing;
   priority?: boolean;
   muted?: boolean;
+  /** False while the card sits in an aria-hidden, off-stage carousel slot —
+   * keeps its stretched link out of the tab order so hidden cards can't
+   * still be tabbed into. */
+  focusable?: boolean;
 }) {
   const isNew = listing.status === "New Listing";
 
@@ -62,6 +67,7 @@ export function ListingCard({
             {/* Stretched link — the whole plate is the target. */}
             <Link
               href="/search"
+              tabIndex={focusable ? undefined : -1}
               className="after:absolute after:inset-0 after:content-['']"
             >
               {listing.title}

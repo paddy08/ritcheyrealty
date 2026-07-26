@@ -113,6 +113,7 @@ export function FeaturedListings({ listings }: { listings: Listing[] }) {
                 listing={listing}
                 priority={i === 0}
                 muted={slot !== 0}
+                focusable={onStage}
               />
             </div>
           );
