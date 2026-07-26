@@ -115,9 +115,12 @@ export default function HomePage() {
               What working together looks like
             </h2>
           </Reveal>
-          <Reveal className="mt-14" delay={80}>
+          {/* No Reveal wrapper: the quotes stagger themselves now, and fading
+              the block in as one unit first would muddy that with a second,
+              overlapping opacity transition. */}
+          <div className="mt-14">
             <TestimonialCarousel items={testimonials} />
-          </Reveal>
+          </div>
           <p className="mt-12 font-mono text-[11px] text-ink-soft">
             Sample testimonials written for this demo — not real client reviews.
           </p>
