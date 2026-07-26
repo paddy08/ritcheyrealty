@@ -7,57 +7,56 @@ import { communities, formatCoords, stations } from "@/lib/site";
 import type { Community } from "@/lib/site";
 
 const MAP_SRC = "/neighborhood-map-3d.webp";
-
-/**
- * An illustrated relief map, one modelled landmark per town, each with its name
- * set into the artwork.
- *
- * Note why the geometry changed when this replaced the previous asset. That one
- * was a Google render — Web Mercator — so every pin could be projected from
- * real lat/lon against four solved corner coordinates. This map is an artistic
- * projection: tilted, relief-shaded, composed rather than surveyed. No set of
- * corners describes it; Fort Worth's label sits at 94.7% down here against
- * 84.8% on the Mercator render.
- *
- * So positions are measured off the artwork instead, in the asset's own pixels,
- * using the names set into the map as the anchor. The lat/lon in lib/site.ts
- * stay real and still drive the coordinate readout — they just no longer place
- * the markers.
- */
 const MAP_W = 1672;
 const MAP_H = 941;
 
 /**
- * The box around each town's landmark, in asset pixels, stopping short of the
- * name printed beneath it — the building lifts, its label stays set in the map.
+ * An illustrated relief map with a modelled landmark per town, each named in
+ * the artwork. Taking a marker blurs the sheet and stands that town's model up
+ * over it.
  *
- * Each box keeps a margin of flat ground above the landmark. That margin is
- * what the feather below needs to fade out over: a box cropped tight to a
- * water tower or a skyline leaves the mask semi-transparent exactly where the
- * building is, and the copy then ghosts against the original beneath it.
+ * Two things worth knowing about how this is put together.
  *
- * Fort Worth is the skyline only. Its box deliberately excludes the stockyards
- * sign (which runs to x535) and clears Saginaw's label (which bottoms out at
- * y600) — both were being dragged into the lift and doubled.
+ * First, the geometry. The previous asset was a Google render — Web Mercator —
+ * so pins were projected from real lat/lon against four solved corners. This
+ * map is an artistic projection, tilted and composed rather than surveyed, and
+ * no set of corners describes it: Fort Worth sits at 94.7% down here against
+ * 84.8% on the Mercator render. Positions are measured off the artwork in its
+ * own pixels, anchored on the names set into it. The lat/lon in lib/site.ts
+ * stay real and still drive the coordinate readout.
+ *
+ * Second, the models. They are separate renders, not cut from this map — the
+ * supplied Grapevine is an airport, Roanoke a church and fountain, and none of
+ * them line up with what is printed. So this cannot be, and does not attempt
+ * to be, the printed building peeling off the page. The model is deliberately
+ * sized larger than the illustration beneath it and covers it outright, which
+ * is what lets the mismatch read as intent rather than as a glitch.
  */
 const LANDMARKS: Record<string, [number, number, number, number]> = {
-  "Fort Worth": [585, 625, 880, 860],
-  Saginaw: [465, 448, 725, 572],
-  Haslet: [565, 90, 780, 240],
-  Roanoke: [915, 8, 1185, 165],
-  Keller: [805, 285, 980, 452],
-  Southlake: [1055, 195, 1295, 352],
-  Grapevine: [1340, 248, 1565, 392],
-  "North Richland Hills": [1030, 552, 1305, 732],
+  "Fort Worth": [365, 605, 890, 885],
+  Saginaw: [455, 443, 735, 578],
+  Haslet: [555, 85, 790, 250],
+  Roanoke: [905, 5, 1195, 172],
+  Keller: [795, 280, 990, 458],
+  Southlake: [1045, 190, 1305, 358],
+  Grapevine: [1330, 243, 1575, 398],
+  "North Richland Hills": [1020, 547, 1315, 738],
 };
 
-/**
- * Feathers the lifted crop into the sheet, so what rises reads as the landmark
- * rather than as a rectangle of terrain peeling up. Opaque across the middle —
- * where the building is — and fading only in the outer rim.
- */
-const FEATHER =
-  "radial-gradient(ellipse 70% 74% at 50% 56%, #000 66%, rgba(0,0,0,0) 96%)";
+const SPRITE: Record<string, string> = {
+  "Fort Worth": "fort-worth",
+  Saginaw: "saginaw",
+  Haslet: "haslet",
+  Roanoke: "roanoke",
+  Keller: "keller",
+  Southlake: "southlake",
+  Grapevine: "grapevine",
+  "North Richland Hills": "north-richland-hills",
+};
+
+/** How much wider than the printed landmark the model stands. Much under 1.4
+ *  and the illustration underneath shows around its edges. */
+const COVER = 1.55;
 
 function landmarkBox(name: string) {
   const b = LANDMARKS[name];
@@ -68,21 +67,8 @@ function landmarkBox(name: string) {
     top: (y0 / MAP_H) * 100,
     width: ((x1 - x0) / MAP_W) * 100,
     height: ((y1 - y0) / MAP_H) * 100,
-  };
-}
-
-/**
- * Sizes the map inside a crop window so the window shows exactly its landmark:
- * the image is blown up to the full map's size relative to the window, then
- * pushed back by the window's own offset. All in percentages, so the crop stays
- * registered to the artwork at every viewport width.
- */
-function croppedMapStyle(box: NonNullable<ReturnType<typeof landmarkBox>>) {
-  return {
-    width: `${(100 / box.width) * 100}%`,
-    height: `${(100 / box.height) * 100}%`,
-    left: `${-(box.left / box.width) * 100}%`,
-    top: `${-(box.top / box.height) * 100}%`,
+    centreX: (((x0 + x1) / 2) / MAP_W) * 100,
+    bottom: (y1 / MAP_H) * 100,
   };
 }
 
@@ -117,10 +103,9 @@ function Readout({
 }
 
 export function NeighborhoodMap() {
-  // Two pieces of state, not one. `active` is what the panel reads, and it
-  // keeps its last town after the cursor leaves so the panel never empties.
-  // `lifted` is what is currently raised off the sheet, and starts at nothing —
-  // otherwise the map would load already blurred behind a raised building.
+  // `active` is what the panel reads, and it keeps its last town after the
+  // cursor leaves so the panel never empties. `lifted` is what is currently
+  // standing, and starts at nothing — otherwise the map loads already blurred.
   const [active, setActive] = useState(0);
   const [lifted, setLifted] = useState<number | null>(null);
   const currentTown = communities[active];
@@ -130,16 +115,20 @@ export function NeighborhoodMap() {
     setLifted(i);
   };
 
+  const liftedTown = lifted === null ? null : communities[lifted];
+  const liftedBox = liftedTown ? landmarkBox(liftedTown.name) : null;
+  const liftedSprite = liftedTown ? SPRITE[liftedTown.name] : null;
+
   return (
     <div className="relative">
       <div
         className="plate aspect-[1672/941] w-full"
         onMouseLeave={() => setLifted(null)}
       >
-        {/* The sheet falls out of focus while a landmark is raised, so the eye
-            goes to the building rather than the terrain. Scaled up a touch at
-            the same time: blurring samples past the image's own edges, and
-            without the overscan you get a soft grey rim inside the plate. */}
+        {/* The sheet falls out of focus while a model is up, so the eye goes to
+            the building. Scaled a touch at the same time: blur samples past the
+            image's own edges, and without the overscan you get a soft rim
+            inside the plate. */}
         <Image
           src={MAP_SRC}
           alt="Illustrated relief map of the Fort Worth area, showing a landmark for each of the eight communities Ritchey Realty serves"
@@ -148,87 +137,75 @@ export function NeighborhoodMap() {
           sizes="(max-width: 1024px) 100vw, 66vw"
           className={`object-cover transition-[filter,transform] duration-300 ease-out ${
             lifted !== null
-              ? "scale-[1.02] blur-[2.5px] brightness-[0.98]"
+              ? "scale-[1.02] blur-[3px] brightness-[0.97]"
               : "scale-100 blur-0"
           }`}
         />
+
+        {/* One model at a time, mounted only once taken — eight sprites come to
+            537KB and none of that should be spent before it is asked for. */}
+        {liftedTown && liftedBox && liftedSprite && (
+          <div
+            key={liftedSprite}
+            className="pointer-events-none absolute z-20"
+            style={{
+              left: `${liftedBox.centreX}%`,
+              top: `${liftedBox.bottom}%`,
+              width: `${liftedBox.width * COVER}%`,
+              transform: "translate(-50%, -88%)",
+            }}
+          >
+            <span
+              aria-hidden="true"
+              className="animate-landmark absolute inset-x-[12%] bottom-[4%] h-[14%] rounded-[50%] bg-ink/45 blur-[10px]"
+            />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={`/landmarks/${liftedSprite}.webp`}
+              alt=""
+              aria-hidden="true"
+              loading="lazy"
+              decoding="async"
+              className="animate-landmark relative block w-full drop-shadow-[0_10px_18px_rgba(27,36,55,0.35)]"
+            />
+          </div>
+        )}
 
         {communities.map((c, i) => {
           const box = landmarkBox(c.name);
           if (!box) return null;
           const isLifted = lifted === i;
-          // While one landmark is raised the rest are taken out entirely, so
-          // the blurred sheet shows through where they were. Left in place they
-          // would sit sharp against a defocused map and give the trick away.
-          const dimmed = lifted !== null && !isLifted;
           return (
             <button
               key={c.name}
               type="button"
               // Hover on desktop, tap on mobile — a tap fires mouseenter too,
-              // so both routes land on the same handler. Focus keeps it
-              // reachable from the keyboard.
+              // so both land on the same handler. Focus keeps it reachable
+              // from the keyboard.
               onMouseEnter={() => select(i)}
               onFocus={() => select(i)}
               onClick={() => select(i)}
               aria-label={`${c.name}: ${c.blurb}`}
               aria-pressed={active === i}
-              className="group absolute cursor-pointer [perspective:900px]"
+              className="group absolute cursor-pointer"
               style={{
                 left: `${box.left}%`,
                 top: `${box.top}%`,
                 width: `${box.width}%`,
                 height: `${box.height}%`,
-                zIndex: isLifted ? 20 : 10,
+                // The standing model owns the space; its own marker drops
+                // behind it rather than sitting on top of the roof.
+                zIndex: isLifted ? 10 : 15,
               }}
             >
-              {/* The cast shadow, growing as the landmark rises. A real element
-                  rather than a drop-shadow filter: filters paint before masks,
-                  so a filtered shadow would be clipped by the very feather that
-                  shapes the crop above it. */}
-              <span
-                aria-hidden="true"
-                className={`absolute bottom-0 left-1/2 h-[16%] w-[68%] -translate-x-1/2 rounded-[50%] bg-ink blur-[10px] transition-all duration-300 ease-out ${
-                  isLifted
-                    ? "translate-y-[35%] scale-100 opacity-50"
-                    : "translate-y-[10%] scale-75 opacity-0"
-                }`}
-              />
-
-              {/* The landmark: the same map file, cropped to this one building
-                  and laid exactly over it. At rest it is pixel-for-pixel what
-                  is underneath, so it cannot be seen; raised, it tilts up off
-                  the sheet it was cut from. */}
-              <span
-                aria-hidden="true"
-                className={`absolute inset-0 origin-bottom overflow-hidden transition-[transform,opacity] duration-300 ease-out ${
-                  isLifted
-                    ? "will-change-transform [transform:translateY(-3%)_rotateX(-6deg)_rotateY(2.5deg)_scale(1.07)]"
-                    : "[transform:none]"
-                } ${dimmed ? "opacity-0" : "opacity-100"}`}
-                style={{ WebkitMaskImage: FEATHER, maskImage: FEATHER }}
-              >
-                {/* Same URL as the plate behind it: one request, one decode. */}
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={MAP_SRC}
-                  alt=""
-                  aria-hidden="true"
-                  loading="lazy"
-                  decoding="async"
-                  className="absolute max-w-none"
-                  style={croppedMapStyle(box)}
-                />
-              </span>
-
               {/* A survey mark at the foot of the landmark: the affordance at
-                  rest, and the point the building appears to lift away from. */}
+                  rest, and the point the model stands up from. */}
               <span
                 aria-hidden="true"
                 className={`absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 rounded-full border-2 border-brass-deep transition-all duration-300 ease-out ${
                   isLifted
-                    ? "h-3.5 w-3.5 bg-brass"
-                    : "h-2.5 w-2.5 bg-limestone-pale/90 group-hover:h-3.5 group-hover:w-3.5 group-hover:bg-brass"
+                    ? "h-3.5 w-3.5 bg-brass opacity-0"
+                    : "h-2.5 w-2.5 bg-limestone-pale/90 opacity-100 group-hover:h-3.5 group-hover:w-3.5 group-hover:bg-brass"
                 }`}
               />
             </button>
