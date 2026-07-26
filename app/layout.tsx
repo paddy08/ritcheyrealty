@@ -62,6 +62,17 @@ export default function RootLayout({
       lang="en"
       className={`${caslon.variable} ${archivo.variable} ${dmMono.variable}`}
     >
+      <head>
+        {/* Listing and team photographs still come from other origins, so the
+            first request to each pays a DNS + TLS round trip. Opening the
+            connections up front takes that off the critical path — worth a few
+            hundred ms on a mobile link. Remove once the imagery is local. */}
+        <link rel="preconnect" href="https://images.unsplash.com" />
+        <link rel="preconnect" href="https://images.squarespace-cdn.com" />
+        {/* The hero still is the first paint that matters; start it with the
+            document rather than after the parser reaches the component. */}
+        <link rel="preload" as="image" href="/hero-poster.webp" fetchPriority="high" />
+      </head>
       <body className="min-h-screen antialiased">
         <Header />
         <main>{children}</main>

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { AgentIntro } from "@/components/AgentIntro";
 import { FeaturedListings } from "@/components/FeaturedListings";
+import { HeroBackdrop } from "@/components/HeroBackdrop";
 import { HeroSearch } from "@/components/HeroSearch";
 import { NeighborhoodMap } from "@/components/NeighborhoodMap";
 import { RangeLine } from "@/components/RangeLine";
@@ -13,25 +14,7 @@ export default function HomePage() {
     <>
       {/* ---------- Hero: footage, type set low and flush left, range line ---------- */}
       <section className="relative isolate flex min-h-dvh flex-col justify-end overflow-hidden">
-        <div className="absolute inset-0 -z-10">
-          <video
-            autoPlay
-            muted
-            loop
-            playsInline
-            preload="metadata"
-            poster="/hero-poster.jpg"
-            aria-hidden="true"
-            className="h-full w-full object-cover object-center"
-          >
-            <source src="/hero.webm" type="video/webm" />
-            <source src="/hero.mp4" type="video/mp4" />
-          </video>
-          {/* Scrims: weighted to the bottom-left, where the type sits. */}
-          <div className="absolute inset-0 bg-ink/30" />
-          <div className="absolute inset-0 bg-gradient-to-t from-ink/90 via-ink/35 to-ink/20" />
-          <div className="absolute inset-0 bg-gradient-to-r from-ink/65 via-ink/10 to-transparent" />
-        </div>
+        <HeroBackdrop />
 
         <div className="container-edge pb-14 pt-36 md:pb-16">
           <p className="animate-rise label-on-ink">

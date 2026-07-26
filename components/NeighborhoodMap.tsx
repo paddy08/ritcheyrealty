@@ -6,42 +6,85 @@ import Link from "next/link";
 import { communities, formatCoords, stations } from "@/lib/site";
 import type { Community } from "@/lib/site";
 
-/**
- * The geographic bounds of public/neighborhood-map-v2.webp.
- *
- * Marker positions are derived from each town's real lat/lon in lib/site.ts
- * rather than hand-placed, so swapping the map only means updating these four
- * numbers — and every pin lands by arithmetic instead of by eye.
- *
- * Solved rather than estimated. The map is a Google render, so it is a Web
- * Mercator projection; fitting one shared scale across both axes (the
- * projection's real geometry, instead of letting each axis stretch
- * independently) against the seven town labels on the annotated copy of this
- * screenshot gives these corners. Two landmarks nobody fitted against confirm
- * it: DFW Airport lands at 87.1% across where it is drawn at 87.2%, and
- * Grapevine Lake at 79.7% where it is drawn at 79.6%.
- *
- * Individual towns sit up to ~1 mile from their label, because Google places a
- * city label at its polygon's centroid while lib/site.ts carries town-centre
- * coordinates. The corners are what is accurate here, not any one label.
- */
-const MAP_BOUNDS = { west: -97.6523, east: -96.9468, north: 33.0345, south: 32.7053 };
+const MAP_SRC = "/neighborhood-map-3d.webp";
 
-/** Project a coordinate onto the map as a percentage of its box. */
-function project({ lat, lon }: { lat: number; lon: number }) {
-  const { west, east, north, south } = MAP_BOUNDS;
+/**
+ * An illustrated relief map, one modelled landmark per town, each with its name
+ * set into the artwork.
+ *
+ * Note why the geometry changed when this replaced the previous asset. That one
+ * was a Google render — Web Mercator — so every pin could be projected from
+ * real lat/lon against four solved corner coordinates. This map is an artistic
+ * projection: tilted, relief-shaded, composed rather than surveyed. No set of
+ * corners describes it; Fort Worth's label sits at 94.7% down here against
+ * 84.8% on the Mercator render.
+ *
+ * So positions are measured off the artwork instead, in the asset's own pixels,
+ * using the names set into the map as the anchor. The lat/lon in lib/site.ts
+ * stay real and still drive the coordinate readout — they just no longer place
+ * the markers.
+ */
+const MAP_W = 1672;
+const MAP_H = 941;
+
+/**
+ * The box around each town's landmark, in asset pixels, stopping short of the
+ * name printed beneath it — the building lifts, its label stays set in the map.
+ *
+ * Each box keeps a margin of flat ground above the landmark. That margin is
+ * what the feather below needs to fade out over: a box cropped tight to a
+ * water tower or a skyline leaves the mask semi-transparent exactly where the
+ * building is, and the copy then ghosts against the original beneath it.
+ *
+ * Fort Worth is the skyline only. Its box deliberately excludes the stockyards
+ * sign (which runs to x535) and clears Saginaw's label (which bottoms out at
+ * y600) — both were being dragged into the lift and doubled.
+ */
+const LANDMARKS: Record<string, [number, number, number, number]> = {
+  "Fort Worth": [585, 625, 880, 860],
+  Saginaw: [465, 448, 725, 572],
+  Haslet: [565, 90, 780, 240],
+  Roanoke: [915, 8, 1185, 165],
+  Keller: [805, 285, 980, 452],
+  Southlake: [1055, 195, 1295, 352],
+  Grapevine: [1340, 248, 1565, 392],
+  "North Richland Hills": [1030, 552, 1305, 732],
+};
+
+/**
+ * Feathers the lifted crop into the sheet, so what rises reads as the landmark
+ * rather than as a rectangle of terrain peeling up. Opaque across the middle —
+ * where the building is — and fading only in the outer rim.
+ */
+const FEATHER =
+  "radial-gradient(ellipse 70% 74% at 50% 56%, #000 66%, rgba(0,0,0,0) 96%)";
+
+function landmarkBox(name: string) {
+  const b = LANDMARKS[name];
+  if (!b) return null;
+  const [x0, y0, x1, y1] = b;
   return {
-    x: ((lon - west) / (east - west)) * 100,
-    y: ((north - lat) / (north - south)) * 100,
+    left: (x0 / MAP_W) * 100,
+    top: (y0 / MAP_H) * 100,
+    width: ((x1 - x0) / MAP_W) * 100,
+    height: ((y1 - y0) / MAP_H) * 100,
   };
 }
 
 /**
- * A pin's card is roughly half the height of the map box at lg. So a pin in
- * the top half cannot carry its card above it without running off the sheet —
- * those flip and hang below the pin instead.
+ * Sizes the map inside a crop window so the window shows exactly its landmark:
+ * the image is blown up to the full map's size relative to the window, then
+ * pushed back by the window's own offset. All in percentages, so the crop stays
+ * registered to the artwork at every viewport width.
  */
-const FLIP_BELOW_ABOVE_Y = 50;
+function croppedMapStyle(box: NonNullable<ReturnType<typeof landmarkBox>>) {
+  return {
+    width: `${(100 / box.width) * 100}%`,
+    height: `${(100 / box.height) * 100}%`,
+    left: `${-(box.left / box.width) * 100}%`,
+    top: `${-(box.top / box.height) * 100}%`,
+  };
+}
 
 /** The readout: a paper card, where the coordinates are earned. */
 function Readout({
@@ -74,144 +117,133 @@ function Readout({
 }
 
 export function NeighborhoodMap() {
+  // Two pieces of state, not one. `active` is what the panel reads, and it
+  // keeps its last town after the cursor leaves so the panel never empties.
+  // `lifted` is what is currently raised off the sheet, and starts at nothing —
+  // otherwise the map would load already blurred behind a raised building.
   const [active, setActive] = useState(0);
-  const current = communities[active];
-  const currentPos = project(current);
-  const below = currentPos.y < FLIP_BELOW_ABOVE_Y;
+  const [lifted, setLifted] = useState<number | null>(null);
+  const currentTown = communities[active];
+
+  const select = (i: number) => {
+    setActive(i);
+    setLifted(i);
+  };
 
   return (
     <div className="relative">
-      {/* The plate matches the asset's own 1683x935 ratio exactly, so
-          object-cover crops nothing. A square box here would cut ~44% off the
-          width — taking Fort Worth and Grapevine, the two outermost towns,
-          straight off the map. */}
-      <div className="plate aspect-[1683/935] w-full">
+      <div
+        className="plate aspect-[1672/941] w-full"
+        onMouseLeave={() => setLifted(null)}
+      >
+        {/* The sheet falls out of focus while a landmark is raised, so the eye
+            goes to the building rather than the terrain. Scaled up a touch at
+            the same time: blurring samples past the image's own edges, and
+            without the overscan you get a soft grey rim inside the plate. */}
         <Image
-          src="/neighborhood-map-v2.webp"
-          alt="Map of the Fort Worth and north-east Tarrant County area showing the eight communities Ritchey Realty serves"
+          src={MAP_SRC}
+          alt="Illustrated relief map of the Fort Worth area, showing a landmark for each of the eight communities Ritchey Realty serves"
           fill
           loading="lazy"
           sizes="(max-width: 1024px) 100vw, 66vw"
-          className="object-cover"
+          className={`object-cover transition-[filter,transform] duration-300 ease-out ${
+            lifted !== null
+              ? "scale-[1.02] blur-[2.5px] brightness-[0.98]"
+              : "scale-100 blur-0"
+          }`}
         />
 
-        {/* Survey pins over each town: a brass ring that closes to a filled
-            mark when selected.
-
-            Selection is on click and focus, not hover. Hover only grows the
-            pin — a card that opened on hover would chase the cursor across the
-            map, and the point of the affordance is to say "click me". */}
         {communities.map((c, i) => {
-          const pos = project(c);
-          const isActive = i === active;
+          const box = landmarkBox(c.name);
+          if (!box) return null;
+          const isLifted = lifted === i;
+          // While one landmark is raised the rest are taken out entirely, so
+          // the blurred sheet shows through where they were. Left in place they
+          // would sit sharp against a defocused map and give the trick away.
+          const dimmed = lifted !== null && !isLifted;
           return (
             <button
               key={c.name}
               type="button"
-              onFocus={() => setActive(i)}
-              onClick={() => setActive(i)}
+              // Hover on desktop, tap on mobile — a tap fires mouseenter too,
+              // so both routes land on the same handler. Focus keeps it
+              // reachable from the keyboard.
+              onMouseEnter={() => select(i)}
+              onFocus={() => select(i)}
+              onClick={() => select(i)}
               aria-label={`${c.name}: ${c.blurb}`}
-              aria-pressed={isActive}
-              className="group absolute flex h-11 w-11 -translate-x-1/2 -translate-y-1/2 cursor-pointer items-center justify-center text-brass-deep md:h-12 md:w-12"
+              aria-pressed={active === i}
+              className="group absolute cursor-pointer [perspective:900px]"
               style={{
-                left: `${pos.x}%`,
-                top: `${pos.y}%`,
-                // The selected pin rides above its neighbours so its label
-                // isn't overlapped by theirs.
-                zIndex: isActive ? 20 : 10,
+                left: `${box.left}%`,
+                top: `${box.top}%`,
+                width: `${box.width}%`,
+                height: `${box.height}%`,
+                zIndex: isLifted ? 20 : 10,
               }}
             >
-              {/* Halo — seats the mark on a busy sheet. Always faintly present
-                  now: an invisible-until-hover control reads as decoration. */}
+              {/* The cast shadow, growing as the landmark rises. A real element
+                  rather than a drop-shadow filter: filters paint before masks,
+                  so a filtered shadow would be clipped by the very feather that
+                  shapes the crop above it. */}
               <span
                 aria-hidden="true"
-                className={`absolute rounded-full bg-limestone-pale transition-all duration-300 ${
-                  isActive
-                    ? "h-9 w-9 opacity-90"
-                    : "h-7 w-7 opacity-70 group-hover:h-9 group-hover:w-9 group-hover:opacity-90"
+                className={`absolute bottom-0 left-1/2 h-[16%] w-[68%] -translate-x-1/2 rounded-[50%] bg-ink blur-[10px] transition-all duration-300 ease-out ${
+                  isLifted
+                    ? "translate-y-[35%] scale-100 opacity-50"
+                    : "translate-y-[10%] scale-75 opacity-0"
                 }`}
               />
-              {/* Crosshair ticks — the survey mark */}
+
+              {/* The landmark: the same map file, cropped to this one building
+                  and laid exactly over it. At rest it is pixel-for-pixel what
+                  is underneath, so it cannot be seen; raised, it tilts up off
+                  the sheet it was cut from. */}
               <span
                 aria-hidden="true"
-                className={`absolute w-px bg-brass-deep transition-all duration-300 ${
-                  isActive
-                    ? "h-9 opacity-100"
-                    : "h-7 opacity-0 group-hover:opacity-70"
-                }`}
-              />
-              <span
-                aria-hidden="true"
-                className={`absolute h-px bg-brass-deep transition-all duration-300 ${
-                  isActive
-                    ? "w-9 opacity-100"
-                    : "w-7 opacity-0 group-hover:opacity-70"
-                }`}
-              />
-              {/* The mark itself */}
-              <span
-                aria-hidden="true"
-                className={`relative block rounded-full border-2 border-brass-deep transition-all duration-300 ${
-                  isActive
-                    ? "h-5 w-5 bg-brass"
-                    : "h-3.5 w-3.5 bg-limestone-pale group-hover:h-4 group-hover:w-4 group-hover:bg-brass"
-                }`}
-              />
-              {/* The town's name, on the map. The asset carries no labels of
-                  its own, so without this a reader can see eight pins but not
-                  tell which town any of them is until they click. */}
-              <span
-                aria-hidden="true"
-                className={`pointer-events-none absolute left-full ml-1.5 hidden whitespace-nowrap rounded-[2px] px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-widest transition-colors duration-200 md:block ${
-                  isActive
-                    ? "bg-ink text-limestone-pale"
-                    : "bg-limestone-pale/85 text-ink group-hover:bg-ink group-hover:text-limestone-pale"
-                }`}
+                className={`absolute inset-0 origin-bottom overflow-hidden transition-[transform,opacity] duration-300 ease-out ${
+                  isLifted
+                    ? "will-change-transform [transform:translateY(-3%)_rotateX(-6deg)_rotateY(2.5deg)_scale(1.07)]"
+                    : "[transform:none]"
+                } ${dimmed ? "opacity-0" : "opacity-100"}`}
+                style={{ WebkitMaskImage: FEATHER, maskImage: FEATHER }}
               >
-                {c.name}
+                {/* Same URL as the plate behind it: one request, one decode. */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={MAP_SRC}
+                  alt=""
+                  aria-hidden="true"
+                  loading="lazy"
+                  decoding="async"
+                  className="absolute max-w-none"
+                  style={croppedMapStyle(box)}
+                />
               </span>
+
+              {/* A survey mark at the foot of the landmark: the affordance at
+                  rest, and the point the building appears to lift away from. */}
+              <span
+                aria-hidden="true"
+                className={`absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 rounded-full border-2 border-brass-deep transition-all duration-300 ease-out ${
+                  isLifted
+                    ? "h-3.5 w-3.5 bg-brass"
+                    : "h-2.5 w-2.5 bg-limestone-pale/90 group-hover:h-3.5 group-hover:w-3.5 group-hover:bg-brass"
+                }`}
+              />
             </button>
           );
         })}
 
+        {/* The reading, top-left — the one corner of this map with no town in
+            it, so the panel covers terrain rather than anything worth seeing. */}
+        <div className="absolute left-4 top-4 z-30 hidden w-[17rem] md:block lg:left-6 lg:top-6 xl:w-[19rem]">
+          <Readout community={currentTown} />
+        </div>
       </div>
 
-      {/* The card, hung off the active pin rather than parked in the corner,
-          so the reading belongs to the point it describes. A brass stem
-          bridges the gap — the page's own tick, at map scale.
-
-          Deliberately a sibling of the plate, not a child: .plate is
-          overflow-hidden, and at the narrow end of lg a card above a pin in
-          the upper half would be clipped by a few pixels rather than simply
-          overhanging the map's edge. At lg and up the strip and the stacked
-          card are both hidden, so this wrapper is exactly the plate's box and
-          the percentages still line up with the pins.
-
-          lg and up only: at md the map box is ~390px tall against a ~250px
-          card, which leaves nowhere for it to sit. Below lg it drops
-          underneath the map instead. */}
-      <div
-        className="pointer-events-none absolute z-30 hidden w-[19rem] lg:block xl:w-[21rem]"
-        style={{
-          left: `${currentPos.x}%`,
-          top: `${currentPos.y}%`,
-          transform: `translate(-50%, ${below ? "0" : "-100%"}) translateY(${
-            below ? "1.75rem" : "-1.75rem"
-          })`,
-        }}
-      >
-        <span
-          aria-hidden="true"
-          className={`absolute left-1/2 h-7 w-px bg-brass-deep ${
-            below ? "bottom-full" : "top-full"
-          }`}
-        />
-        <Readout community={current} className="pointer-events-auto" />
-      </div>
-
-      {/* Below md the map is too small for eight 44px pins to be tappable, so
-          the same eight towns get a thumb-sized strip instead. Same order as
-          the range line. */}
+      {/* Below md the landmarks are too small to tap accurately, so the same
+          eight towns get a thumb-sized strip. Same order as the range line. */}
       <ol className="no-scrollbar scroll-fade mt-4 flex gap-6 overflow-x-auto md:hidden">
         {stations.map((c) => {
           const i = communities.indexOf(c);
@@ -220,7 +252,7 @@ export function NeighborhoodMap() {
             <li key={c.name} className="flex-none">
               <button
                 type="button"
-                onClick={() => setActive(i)}
+                onClick={() => select(i)}
                 aria-pressed={isActive}
                 className="flex flex-col items-center pt-1"
               >
@@ -243,8 +275,8 @@ export function NeighborhoodMap() {
         })}
       </ol>
 
-      {/* Under lg the card can't sit on the map, so it sits beneath it. */}
-      <Readout community={current} className="mt-5 lg:hidden" />
+      {/* Under md the panel can't sit on the map, so it sits beneath it. */}
+      <Readout community={currentTown} className="mt-5 md:hidden" />
     </div>
   );
 }

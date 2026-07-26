@@ -125,6 +125,8 @@ export type Listing = {
 };
 
 // Fictional sample listings — do not present as real inventory.
+// Imagery self-hosted as WebP: served from Unsplash it cost a third-party DNS+TLS
+// round trip on the critical path, which measured as 1.3s of LCP load delay.
 export const featuredListings: Listing[] = [
   {
     id: "l1",
@@ -137,7 +139,7 @@ export const featuredListings: Listing[] = [
     sqft: "3,940",
     status: "New Listing",
     image:
-      "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=70",
+      "/listings/l1.webp",
     alt: "Sample listing: white modern farmhouse with a manicured front lawn",
   },
   {
@@ -151,7 +153,7 @@ export const featuredListings: Listing[] = [
     sqft: "2,510",
     status: "For Sale",
     image:
-      "https://images.unsplash.com/photo-1568605114967-8130f3a36994?auto=format&fit=crop&w=1200&q=70",
+      "/listings/l2.webp",
     alt: "Sample listing: brick craftsman home with a covered front porch",
   },
   {
@@ -165,7 +167,7 @@ export const featuredListings: Listing[] = [
     sqft: "2,780",
     status: "For Sale",
     image:
-      "https://images.unsplash.com/photo-1570129477492-45c003edd2be?auto=format&fit=crop&w=1200&q=70",
+      "/listings/l3.webp",
     alt: "Sample listing: two-story transitional home at dusk with warm interior lighting",
   },
   {
@@ -179,7 +181,7 @@ export const featuredListings: Listing[] = [
     sqft: "1,640",
     status: "Pending",
     image:
-      "https://images.unsplash.com/photo-1449844908441-8829872d2607?auto=format&fit=crop&w=1200&q=70",
+      "/listings/l4.webp",
     alt: "Sample listing: exterior of a brick building with ground-floor windows",
   },
 ];
@@ -272,19 +274,19 @@ export const stations: Community[] = [...communities].sort(
 // sizing. Swap for local/AI-generated assets before a real launch.
 export const communityImages: Record<string, { src: string; alt: string }> = {
   "Fort Worth": {
-    src: "https://images.unsplash.com/photo-1570129477492-45c003edd2be",
+    src: "/listings/l3.webp",
     alt: "Sample imagery: a warm two-story home at dusk",
   },
   Southlake: {
-    src: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c",
+    src: "/listings/l1.webp",
     alt: "Sample imagery: a modern white farmhouse",
   },
   Keller: {
-    src: "https://images.unsplash.com/photo-1568605114967-8130f3a36994",
+    src: "/listings/l2.webp",
     alt: "Sample imagery: a brick home with a covered porch",
   },
   Grapevine: {
-    src: "https://images.unsplash.com/photo-1449844908441-8829872d2607",
+    src: "/listings/l4.webp",
     alt: "Sample imagery: a suburban home exterior",
   },
   "North Richland Hills": {
