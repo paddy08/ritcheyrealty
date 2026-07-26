@@ -8,6 +8,20 @@ type RevealProps = {
   delay?: number;
   className?: string;
   as?: "div" | "section" | "li" | "article";
+  /**
+   * "rise" (default) fades and lifts the element.
+   * "plate" uncovers the contents from the bottom edge while the image inside
+   * settles back from an over-scale — a print being laid down. The clip goes
+   * on an inner wrapper, never on the observed element, because clip-path is
+   * applied before intersection is computed.
+   */
+  variant?: "rise" | "plate";
+  /**
+   * Play again every time the element re-enters view. Off by default: most of
+   * the page is body copy, and re-fading paragraphs on every scroll is noise.
+   * On for the pieces that are meant to be watched.
+   */
+  repeat?: boolean;
 };
 
 /**
@@ -21,6 +35,8 @@ export function Reveal({
   delay = 0,
   className = "",
   as = "div",
+  variant = "rise",
+  repeat = false,
 }: RevealProps) {
   const ref = useRef<HTMLElement | null>(null);
   const [visible, setVisible] = useState(false);
@@ -43,7 +59,11 @@ export function Reveal({
         for (const entry of entries) {
           if (entry.isIntersecting) {
             setVisible(true);
-            observer.unobserve(entry.target);
+            // One-shot unless asked to repeat — staying subscribed is what
+            // lets it replay when the element comes back into view.
+            if (!repeat) observer.unobserve(entry.target);
+          } else if (repeat) {
+            setVisible(false);
           }
         }
       },
@@ -52,9 +72,22 @@ export function Reveal({
 
     observer.observe(node);
     return () => observer.disconnect();
-  }, []);
+  }, [repeat]);
 
   const Tag = as;
+
+  if (variant === "plate") {
+    return (
+      <Tag ref={ref as never} className={className}>
+        <div
+          style={visible ? { transitionDelay: `${delay}ms` } : undefined}
+          className={`plate-clip ${visible ? "plate-clip-in" : ""}`}
+        >
+          {children}
+        </div>
+      </Tag>
+    );
+  }
 
   return (
     <Tag

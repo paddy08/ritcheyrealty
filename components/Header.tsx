@@ -18,26 +18,25 @@ export function Header() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // Over the home hero the bar is transparent with light text; once scrolled
-  // it becomes a frosted cream bar with charcoal text. Non-home routes and
-  // the open mobile panel force the solid state so text stays legible on
-  // pages without a dark hero.
+  // Over the home hero the bar is transparent with light type; once scrolled it
+  // becomes a solid limestone bar with ink type. Matte in both states — no
+  // frosted glass anywhere on this site. Non-home routes and the open mobile
+  // panel force the solid state so type stays legible without a dark hero.
   const solid = scrolled || open || pathname !== "/";
 
   return (
     <header className="fixed inset-x-0 top-0 z-50">
-      {/* Top state: soft scrim that fades into the hero — no hard bottom edge.
-          Extends past the bar so the darkening dissolves gradually. */}
+      {/* Over the hero: a soft ink scrim that dissolves into the footage. */}
       <div
         aria-hidden="true"
-        className={`pointer-events-none absolute inset-x-0 top-0 h-[170%] bg-gradient-to-b from-charcoal/70 via-charcoal/25 to-transparent transition-opacity duration-300 ${
+        className={`pointer-events-none absolute inset-x-0 top-0 h-[180%] bg-gradient-to-b from-ink/75 via-ink/25 to-transparent transition-opacity duration-300 ${
           solid ? "opacity-0" : "opacity-100"
         }`}
       />
-      {/* Scrolled state: frosted cream bar */}
+      {/* Scrolled: solid limestone with a hairline datum along the bottom. */}
       <div
         aria-hidden="true"
-        className={`pointer-events-none absolute inset-0 bg-cream/85 shadow-[0_1px_0_0_rgba(43,42,38,0.08),0_12px_32px_-24px_rgba(43,42,38,0.35)] backdrop-blur-xl transition-opacity duration-300 ${
+        className={`pointer-events-none absolute inset-0 border-b border-ink/10 bg-limestone-pale transition-opacity duration-300 ${
           solid ? "opacity-100" : "opacity-0"
         }`}
       />
@@ -47,7 +46,6 @@ export function Header() {
             solid ? "py-3" : "py-5"
           }`}
         >
-          {/* Logo */}
           <Link
             href="/"
             className="flex items-center"
@@ -62,13 +60,12 @@ export function Header() {
               priority
               className={`w-auto transition-all duration-300 ${
                 solid
-                  ? "h-12"
-                  : "h-[4.25rem] drop-shadow-[0_1px_6px_rgba(0,0,0,0.35)]"
+                  ? "h-11"
+                  : "h-[4rem] drop-shadow-[0_1px_8px_rgba(0,0,0,0.45)]"
               }`}
             />
           </Link>
 
-          {/* Desktop nav */}
           <nav className="hidden items-center gap-7 lg:flex">
             {nav.map((item) => {
               const active =
@@ -80,10 +77,10 @@ export function Header() {
                   key={item.href}
                   href={item.href}
                   aria-current={active ? "page" : undefined}
-                  className={`nav-link text-sm tracking-wide ${
+                  className={`nav-link text-[13px] ${
                     solid
-                      ? "text-charcoal-soft hover:text-charcoal"
-                      : "text-cream/85 hover:text-cream"
+                      ? "text-ink-soft hover:text-ink"
+                      : "text-limestone/80 hover:text-limestone-pale"
                   } ${active ? "nav-link-active" : ""}`}
                 >
                   {item.label}
@@ -92,21 +89,20 @@ export function Header() {
             })}
             <Link
               href="/contact"
-              className={`btn ml-1 px-6 py-2.5 ${
+              className={`btn ml-1 px-5 py-2.5 ${
                 solid
-                  ? "bg-charcoal text-cream hover:bg-charcoal-soft"
-                  : "bg-cream text-charcoal hover:bg-cream/90"
+                  ? "bg-ink text-limestone-pale hover:bg-ink-soft"
+                  : "bg-brass-pale text-ink hover:bg-limestone-pale"
               }`}
             >
-              Get in touch
+              Join us
             </Link>
           </nav>
 
-          {/* Mobile / tablet toggle */}
           <button
             type="button"
             className={`-mr-2 inline-flex items-center justify-center p-2 transition-colors duration-300 lg:hidden ${
-              solid ? "text-charcoal" : "text-cream"
+              solid ? "text-ink" : "text-limestone-pale"
             }`}
             aria-expanded={open}
             aria-controls="mobile-nav"
@@ -134,33 +130,33 @@ export function Header() {
         </div>
       </div>
 
-      {/* Mobile nav — slides open beneath the bar, same frosted surface */}
+      {/* Mobile nav — opens beneath the bar on the same limestone surface. */}
       <nav
         id="mobile-nav"
-        className={`relative grid transition-[grid-template-rows] duration-300 ease-out lg:hidden ${
+        className={`relative grid bg-limestone-pale transition-[grid-template-rows] duration-300 ease-out lg:hidden ${
           open ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
         }`}
       >
         <div className="overflow-hidden">
-          <ul className="container-edge flex flex-col gap-1 border-t border-charcoal/10 py-4">
+          <ul className="container-edge flex flex-col border-t border-ink/10 py-3">
             {nav.map((item) => (
-              <li key={item.href}>
+              <li key={item.href} className="border-b border-ink/[0.07]">
                 <Link
                   href={item.href}
-                  className="block rounded-lg px-3 py-2.5 text-charcoal-soft transition-colors hover:bg-charcoal/5 hover:text-charcoal"
+                  className="block py-3 text-ink-soft transition-colors hover:text-ink"
                   onClick={() => setOpen(false)}
                 >
                   {item.label}
                 </Link>
               </li>
             ))}
-            <li className="px-1 pb-2 pt-3">
+            <li className="pb-2 pt-5">
               <Link
                 href="/contact"
-                className="btn w-full bg-charcoal text-cream hover:bg-charcoal-soft"
+                className="btn-solid w-full"
                 onClick={() => setOpen(false)}
               >
-                Get in touch
+                Join us
               </Link>
             </li>
           </ul>

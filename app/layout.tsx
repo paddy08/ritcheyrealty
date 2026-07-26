@@ -1,23 +1,34 @@
 import type { Metadata } from "next";
-import { Fraunces, Inter } from "next/font/google";
+import { Archivo, DM_Mono, Libre_Caslon_Display } from "next/font/google";
 import "./globals.css";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 
-// Self-hosted via next/font — no render-blocking external requests, swap display.
-const fraunces = Fraunces({
+// Three roles, self-hosted via next/font — no render-blocking external requests.
+//
+// Display: Libre Caslon. Caslon is the face of American deeds and land titles;
+// one weight, used large and sparingly.
+const caslon = Libre_Caslon_Display({
   subsets: ["latin"],
   display: "swap",
-  variable: "--font-serif",
-  weight: ["400", "500", "600"],
-  style: ["normal", "italic"],
+  variable: "--font-display",
+  weight: ["400"],
 });
 
-const inter = Inter({
+// Body: Archivo — an American grotesque, sturdy at small sizes.
+const archivo = Archivo({
   subsets: ["latin"],
   display: "swap",
   variable: "--font-sans",
   weight: ["400", "500", "600"],
+});
+
+// Utility: DM Mono — labels, coordinates, and property data.
+const dmMono = DM_Mono({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-mono",
+  weight: ["300", "400", "500"],
 });
 
 export const metadata: Metadata = {
@@ -47,7 +58,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${fraunces.variable} ${inter.variable}`}>
+    <html
+      lang="en"
+      className={`${caslon.variable} ${archivo.variable} ${dmMono.variable}`}
+    >
       <body className="min-h-screen antialiased">
         <Header />
         <main>{children}</main>

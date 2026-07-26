@@ -1,71 +1,28 @@
-"use client";
-
-import { useRef } from "react";
 import type { Testimonial } from "@/lib/site";
 
+/**
+ * Four quotes, set quietly. No carousel: with four items, hiding three behind
+ * arrows costs a reader more than it saves. Each quote hangs from its own
+ * datum, so the set reads as a column of entries rather than a row of cards.
+ */
 export function TestimonialCarousel({ items }: { items: Testimonial[] }) {
-  const trackRef = useRef<HTMLDivElement>(null);
-
-  const scrollByCard = (dir: 1 | -1) => {
-    const track = trackRef.current;
-    if (!track) return;
-    const card = track.querySelector<HTMLElement>("[data-card]");
-    const amount = card ? card.offsetWidth + 24 : track.clientWidth * 0.8;
-    track.scrollBy({ left: dir * amount, behavior: "smooth" });
-  };
-
   return (
-    <div className="relative">
-      <div
-        ref={trackRef}
-        className="no-scrollbar flex snap-x snap-mandatory gap-6 overflow-x-auto scroll-smooth pb-2"
-        role="list"
-      >
-        {items.map((t) => (
-          <figure
-            key={t.id}
-            data-card
-            role="listitem"
-            className="glass w-[85%] flex-none snap-start rounded-2xl p-8 text-cream sm:w-[60%] lg:w-[calc(50%-12px)]"
-          >
-            <span
-              aria-hidden="true"
-              className="font-serif text-5xl leading-none text-sage-pale"
-            >
-              &ldquo;
-            </span>
-            <blockquote className="mt-2 font-serif text-lg leading-relaxed text-cream/90">
+    <ul className="grid gap-x-16 gap-y-12 md:grid-cols-2">
+      {items.map((t) => (
+        <li key={t.id}>
+          <figure className="border-t border-brass-deep/50 pt-6">
+            <blockquote className="display-sm text-[1.375rem] leading-[1.5] text-ink">
               {t.quote}
             </blockquote>
-            <figcaption className="mt-6 border-t border-white/15 pt-4">
-              <p className="text-sm font-medium text-cream">{t.name}</p>
-              <p className="text-xs uppercase tracking-widest text-sage-pale">
+            <figcaption className="mt-5 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+              <span className="text-sm font-medium text-ink">{t.name}</span>
+              <span className="font-mono text-[10px] uppercase tracking-widest text-ink-muted">
                 {t.detail}
-              </p>
+              </span>
             </figcaption>
           </figure>
-        ))}
-      </div>
-
-      {/* Controls */}
-      <div className="mt-8 flex items-center gap-3">
-        <button
-          type="button"
-          onClick={() => scrollByCard(-1)}
-          aria-label="Previous testimonial"
-          className="flex h-11 w-11 items-center justify-center rounded-full border border-cream/30 text-cream transition-colors hover:bg-cream hover:text-charcoal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cream focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
-        >
-          <span aria-hidden="true">&larr;</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => scrollByCard(1)}
-          aria-label="Next testimonial"
-          className="flex h-11 w-11 items-center justify-center rounded-full border border-cream/30 text-cream transition-colors hover:bg-cream hover:text-charcoal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cream focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
-        >
-          <span aria-hidden="true">&rarr;</span>
-        </button>
-      </div>
-    </div>
+        </li>
+      ))}
+    </ul>
   );
 }

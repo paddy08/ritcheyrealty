@@ -12,6 +12,95 @@ export const site = {
     "Fort Worth, Grapevine, Keller, Haslet, North Richland Hills, Roanoke, Saginaw & Southlake",
 };
 
+// Kallie's title, bio and figures below are taken from ritcheyrealty.com
+// (/about-kallie). Nothing here is invented.
+export const agent = {
+  name: "Kallie Ritchey",
+  role: "REALTOR® · Broker/Owner",
+  photo:
+    "https://images.squarespace-cdn.com/content/v1/60788ddcc0d7c6232712c990/287c2f30-59a5-4822-b7db-11b071bec47c/Kallies+New+Headshot.jpg",
+  license: "Broker 9004834 | RE 603353",
+  statement: "Licensed since 2010. Broker since 2015. Around 50 sales a year.",
+  bio: [
+    "A REALTOR®, Broker/Owner of Ritchey Realty, and a national real estate coach with the Tom Ferry organization — known for balanced expertise across both traditional and luxury markets throughout North Texas.",
+    "Based in Keller, Kallie has guided hundreds of clients through homes ranging from family neighbourhoods to custom estates in Southlake, Westlake, Trophy Club, Roanoke and Grapevine. She holds a Master of Science from UT Arlington and is a certified Texas Real Estate Commission instructor.",
+  ],
+  // Real, checkable figures — not marketing rounds.
+  facts: [
+    { label: "Licensed since", value: "2010" },
+    { label: "Broker since", value: "2015" },
+    { label: "Sales a year", value: "~50" },
+    { label: "Google reviews", value: "50+" },
+  ],
+};
+
+/**
+ * The team, from ritcheyrealty.com/team-page and the individual profile pages.
+ * Titles and bio lines are the site's own words, trimmed — none invented.
+ *
+ * Two members publish a photograph; the rest fall back to a monogram, because
+ * putting a stock face under a real person's name would misrepresent them.
+ * Drop a URL into `photo` and it takes over.
+ *
+ * Direct mobile numbers and personal email addresses are published on the live
+ * site but are deliberately not committed here; enquiries route to the office.
+ */
+export type TeamMember = {
+  name: string;
+  role: string;
+  email?: string;
+  photo?: string;
+  license?: string;
+};
+
+export const team: TeamMember[] = [
+  {
+    name: "Kelly Saint Patrick",
+    role: "Marketing & Events Director",
+    email: "kelly@ritcheyrealty.com",
+    photo: "/team/kelly_patrick.webp",
+  },
+  {
+    name: "Jared Holbert",
+    role: "Agent",
+    license: "0601709",
+    photo: "/team/jared_holbert.webp",
+  },
+  {
+    name: "David Capps",
+    role: "Agent",
+    license: "819141",
+    photo: "/team/david_capps.webp",
+  },
+  {
+    name: "Brittany Terry",
+    role: "Agent",
+    license: "0722815",
+    photo: "/team/brittany_terry.webp",
+  },
+  {
+    name: "Chasstin Terry",
+    role: "Agent",
+    license: "0768595",
+    photo: "/team/chasstin_terry.webp",
+  },
+];
+
+/**
+ * Intro video — https://youtu.be/x4Twesrbl4U
+ *
+ * `poster` wins when set. Point it at any file in /public and it replaces the
+ * YouTube thumbnail, which for this video tops out at 640x480 and is soft on a
+ * full-width plate. A 1920x1080 still is the fix.
+ */
+export const introVideo = {
+  youtubeId: "x4Twesrbl4U",
+  title: "Meet the Ritchey Realty team",
+  // Save the supplied still here. If the file is absent the plate falls back
+  // to YouTube's own thumbnail, so a missing poster degrades rather than breaks.
+  poster: "/team-video-poster.webp",
+};
+
 export const nav = [
   { label: "Home", href: "/" },
   { label: "Communities", href: "/communities" },
@@ -90,8 +179,8 @@ export const featuredListings: Listing[] = [
     sqft: "1,640",
     status: "Pending",
     image:
-      "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=1200&q=70",
-    alt: "Sample listing: bright open-plan loft interior with large windows",
+      "https://images.unsplash.com/photo-1449844908441-8829872d2607?auto=format&fit=crop&w=1200&q=70",
+    alt: "Sample listing: exterior of a brick building with ground-floor windows",
   },
 ];
 
@@ -101,7 +190,16 @@ export type Community = {
   // Approximate position on the stylized DFW map, as % of the map box.
   x: number;
   y: number;
+  // Approximate town-center coordinates. Used for the coordinate readout and
+  // to order the range line true west-to-east.
+  lat: number;
+  lon: number;
 };
+
+/** Format a coordinate pair the way a plat does: 32.7555° N, 97.3308° W */
+export function formatCoords({ lat, lon }: Pick<Community, "lat" | "lon">) {
+  return `${lat.toFixed(4)}° N, ${Math.abs(lon).toFixed(4)}° W`;
+}
 
 // Original short copy written for this demo (not copied from the live site).
 export const communities: Community[] = [
@@ -111,6 +209,8 @@ export const communities: Community[] = [
       "Cowtown grit meets a real arts district — Fort Worth keeps its character while the market keeps climbing.",
     x: 22,
     y: 86,
+    lat: 32.7555,
+    lon: -97.3308,
   },
   {
     name: "Saginaw",
@@ -118,6 +218,8 @@ export const communities: Community[] = [
       "Approachable, tight-knit, and an easy commute — a quiet foothold just north of Fort Worth.",
     x: 15,
     y: 58,
+    lat: 32.8601,
+    lon: -97.3644,
   },
   {
     name: "Haslet",
@@ -125,6 +227,8 @@ export const communities: Community[] = [
       "Room to breathe on the north edge — newer builds and acreage without leaving the metroplex.",
     x: 18,
     y: 24,
+    lat: 32.9757,
+    lon: -97.3478,
   },
   {
     name: "Roanoke",
@@ -132,6 +236,8 @@ export const communities: Community[] = [
       "The self-proclaimed Unique Dining Capital of Texas — small-town scale with a big appetite for growth.",
     x: 50,
     y: 12,
+    lat: 33.004,
+    lon: -97.2258,
   },
   {
     name: "Keller",
@@ -139,6 +245,8 @@ export const communities: Community[] = [
       "Family-first neighborhoods, green trails, and a small-town feel that reliably holds its value.",
     x: 44,
     y: 36,
+    lat: 32.9346,
+    lon: -97.2517,
   },
   {
     name: "Southlake",
@@ -146,6 +254,8 @@ export const communities: Community[] = [
       "Top-rated schools and polished master-planned living, minutes from DFW Airport.",
     x: 74,
     y: 33,
+    lat: 32.9412,
+    lon: -97.1342,
   },
   {
     name: "Grapevine",
@@ -153,6 +263,8 @@ export const communities: Community[] = [
       "Historic Main Street charm, lake access, and a walkable heart with genuine personality.",
     x: 87,
     y: 37,
+    lat: 32.9343,
+    lon: -97.0781,
   },
   {
     name: "North Richland Hills",
@@ -160,8 +272,16 @@ export const communities: Community[] = [
       "Established, well-connected, and one of the mid-cities' best values for space.",
     x: 52,
     y: 64,
+    lat: 32.8343,
+    lon: -97.2289,
   },
 ];
+
+// The range line reads left-to-right as you'd drive it: west to east. Ordering
+// by longitude is the information the line carries, so it's derived, not typed.
+export const stations: Community[] = [...communities].sort(
+  (a, b) => a.lon - b.lon
+);
 
 // Placeholder community imagery (Unsplash). Base URLs — the custom loader adds
 // sizing. Swap for local/AI-generated assets before a real launch.
