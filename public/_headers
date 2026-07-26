@@ -7,21 +7,25 @@
 /_next/static/*
   Cache-Control: public, max-age=31536000, immutable
 
-# Static media in /public isn't hashed, so keep this shorter: long enough to
-# help repeat visits, short enough that a swapped file doesn't stay stale for
-# a year. Bump the filename (e.g. hero-v2.mp4) instead of relying on cache
-# expiry if you replace one of these.
+# Static media in /public isn't hashed. Lighthouse's cache-lifetime scoring
+# only gives partial credit below ~1 month, so this is set to 30 days rather
+# than the year given to the hashed build assets above — while this site is
+# still being actively redesigned, files like hero.mp4 keep getting replaced
+# under the same name, and a longer TTL would leave repeat visitors seeing a
+# stale version for that much longer. Bump the filename (e.g. hero-v2.mp4)
+# instead of relying on cache expiry when you replace one of these, and
+# raise this once the asset set stops changing often.
 /*.mp4
-  Cache-Control: public, max-age=604800
+  Cache-Control: public, max-age=2592000
 
 /*.webm
-  Cache-Control: public, max-age=604800
+  Cache-Control: public, max-age=2592000
 
 /*.webp
-  Cache-Control: public, max-age=604800
+  Cache-Control: public, max-age=2592000
 
 /*.jpg
-  Cache-Control: public, max-age=604800
+  Cache-Control: public, max-age=2592000
 
 /*.png
-  Cache-Control: public, max-age=604800
+  Cache-Control: public, max-age=2592000

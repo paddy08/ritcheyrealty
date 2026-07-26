@@ -118,7 +118,7 @@ export default function HomePage() {
           <Reveal className="mt-14" delay={80}>
             <TestimonialCarousel items={testimonials} />
           </Reveal>
-          <p className="mt-12 font-mono text-[11px] text-ink-muted">
+          <p className="mt-12 font-mono text-[11px] text-ink-soft">
             Sample testimonials written for this demo — not real client reviews.
           </p>
         </div>
