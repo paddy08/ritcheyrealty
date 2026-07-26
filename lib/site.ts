@@ -187,11 +187,9 @@ export const featuredListings: Listing[] = [
 export type Community = {
   name: string;
   blurb: string;
-  // Approximate position on the stylized DFW map, as % of the map box.
-  x: number;
-  y: number;
-  // Approximate town-center coordinates. Used for the coordinate readout and
-  // to order the range line true west-to-east.
+  // Real coordinates. These drive three things: the coordinate readout, the
+  // west-to-east ordering of the range line, and — projected against the map's
+  // corner bounds in NeighborhoodMap — where each pin lands on the map itself.
   lat: number;
   lon: number;
 };
@@ -207,8 +205,6 @@ export const communities: Community[] = [
     name: "Fort Worth",
     blurb:
       "Cowtown grit meets a real arts district — Fort Worth keeps its character while the market keeps climbing.",
-    x: 22,
-    y: 86,
     lat: 32.7555,
     lon: -97.3308,
   },
@@ -216,8 +212,6 @@ export const communities: Community[] = [
     name: "Saginaw",
     blurb:
       "Approachable, tight-knit, and an easy commute — a quiet foothold just north of Fort Worth.",
-    x: 15,
-    y: 58,
     lat: 32.8601,
     lon: -97.3644,
   },
@@ -225,8 +219,6 @@ export const communities: Community[] = [
     name: "Haslet",
     blurb:
       "Room to breathe on the north edge — newer builds and acreage without leaving the metroplex.",
-    x: 18,
-    y: 24,
     lat: 32.9757,
     lon: -97.3478,
   },
@@ -234,8 +226,6 @@ export const communities: Community[] = [
     name: "Roanoke",
     blurb:
       "The self-proclaimed Unique Dining Capital of Texas — small-town scale with a big appetite for growth.",
-    x: 50,
-    y: 12,
     lat: 33.004,
     lon: -97.2258,
   },
@@ -243,8 +233,6 @@ export const communities: Community[] = [
     name: "Keller",
     blurb:
       "Family-first neighborhoods, green trails, and a small-town feel that reliably holds its value.",
-    x: 44,
-    y: 36,
     lat: 32.9346,
     lon: -97.2517,
   },
@@ -252,8 +240,6 @@ export const communities: Community[] = [
     name: "Southlake",
     blurb:
       "Top-rated schools and polished master-planned living, minutes from DFW Airport.",
-    x: 74,
-    y: 33,
     lat: 32.9412,
     lon: -97.1342,
   },
@@ -261,19 +247,18 @@ export const communities: Community[] = [
     name: "Grapevine",
     blurb:
       "Historic Main Street charm, lake access, and a walkable heart with genuine personality.",
-    x: 87,
-    y: 37,
     lat: 32.9343,
     lon: -97.0781,
   },
   {
+    // Pinned at the I-820 / SH-121 / SH-183 interchange rather than at the
+    // Mid-Cities Blvd city-hall coordinate ~0.75 mi west. Both sit inside NRH;
+    // the interchange is the landmark a reader actually recognises on the map.
     name: "North Richland Hills",
     blurb:
       "Established, well-connected, and one of the mid-cities' best values for space.",
-    x: 52,
-    y: 64,
-    lat: 32.8343,
-    lon: -97.2289,
+    lat: 32.83,
+    lon: -97.215,
   },
 ];
 
