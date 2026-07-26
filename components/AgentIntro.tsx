@@ -70,10 +70,10 @@ export function AgentIntro() {
       </Reveal>
 
       <div className="relative z-10 -mt-12 grid gap-8 md:-mt-24 md:grid-cols-[minmax(0,20rem)_minmax(0,1fr)] md:gap-12">
-        <Reveal className="md:ml-8" delay={260} repeat>
+        <Reveal className="w-40 sm:w-48 md:ml-8 md:w-auto" delay={260} repeat>
           <Portrait
             member={{ name: agent.name, role: agent.role, photo: agent.photo }}
-            sizes="(max-width: 768px) 100vw, 20rem"
+            sizes="(max-width: 640px) 10rem, (max-width: 768px) 12rem, 20rem"
           />
           <p className="mt-3 font-mono text-[11px] leading-relaxed text-ink-muted">
             Licensing: {agent.license}
@@ -121,7 +121,7 @@ export function AgentIntro() {
             <div key={member.name}>
               <Portrait
                 member={member}
-                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
+                sizes="(max-width: 640px) 9.5rem, (max-width: 1024px) 33vw, 20vw"
               />
               <p className="display-sm mt-4 text-lg leading-tight text-ink">
                 {member.name}

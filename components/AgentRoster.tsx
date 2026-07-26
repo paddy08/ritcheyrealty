@@ -49,11 +49,16 @@ export function AgentRoster({ children }: { children: React.ReactNode }) {
   return (
     <div ref={rowRef}>
       <div className="datum" />
-      <ul className="grid grid-cols-2 gap-x-6 gap-y-10 sm:grid-cols-3 lg:grid-cols-5">
+      {/* Below sm, a wrapping grid wraps 5 cards into an uneven 2-2-1 stack,
+          which reads as a hierarchy (like a leader on their own row) rather
+          than the flat, no-hierarchy line this is meant to be. A single
+          horizontally-scrolling row keeps everyone on the same line, same
+          pattern the range line above uses for the eight towns. */}
+      <ul className="no-scrollbar scroll-fade flex gap-6 overflow-x-auto sm:grid sm:grid-cols-3 sm:gap-x-6 sm:gap-y-10 sm:overflow-visible lg:grid-cols-5">
         {cards.map((card, i) => (
           // No top padding: the tick is the first thing in the cell so it
           // hangs from the datum rather than floating below it.
-          <li key={i}>
+          <li key={i} className="min-w-[9.5rem] flex-none sm:min-w-0">
             {/* Delays apply on the way in only. Staggering the exit as well
                 would make scrolling away its own little performance; this way
                 the row resets at once and the cascade belongs to the entrance. */}
