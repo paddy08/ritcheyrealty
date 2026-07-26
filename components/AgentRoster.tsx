@@ -58,7 +58,11 @@ export function AgentRoster({ children }: { children: React.ReactNode }) {
         {cards.map((card, i) => (
           // No top padding: the tick is the first thing in the cell so it
           // hangs from the datum rather than floating below it.
-          <li key={i} className="min-w-[9.5rem] flex-none sm:min-w-0">
+          // Fixed width, not a min-width: flex-none sizes to content, so a
+          // longer role line ("Marketing & Events Director") stretched that
+          // one card — and its portrait with it — wider than the rest. The
+          // text wraps now instead; every plate is the same size.
+          <li key={i} className="w-[9.5rem] flex-none sm:w-auto sm:min-w-0">
             {/* Delays apply on the way in only. Staggering the exit as well
                 would make scrolling away its own little performance; this way
                 the row resets at once and the cascade belongs to the entrance. */}
