@@ -307,11 +307,39 @@ export const communityImages: Record<string, { src: string; alt: string }> = {
   },
 };
 
+/**
+ * Aggregate star ratings, shown as the testimonial section's header stat.
+ *
+ * PLACEHOLDER FIGURES. Only the review *count* is a checked fact — it comes
+ * from ritcheyrealty.com and is also carried in `agent.facts` above. Neither
+ * star rating has been verified against Google or Zillow, so both are marked
+ * here rather than in a comment somewhere the next person won't read. Replace
+ * with the real numbers before this goes anywhere near production; the section
+ * renders whatever is in this array, so removing a source removes its stat.
+ */
+export type ReviewSource = {
+  source: string;
+  /** Out of 5. Placeholder — see above. */
+  rating: number;
+  /** Displayed verbatim, so "50+" and "31" both work. */
+  count: string;
+  verified: boolean;
+};
+
+export const reviewSources: ReviewSource[] = [
+  { source: "Google", rating: 4.9, count: "50+", verified: false },
+  { source: "Zillow", rating: 5.0, count: "20+", verified: false },
+];
+
 export type Testimonial = {
   id: string;
   quote: string;
   name: string;
   detail: string;
+  /** Out of 5, rendered as filled marks on the rail. */
+  rating: number;
+  /** Month and year only — a full date implies a record we don't hold. */
+  date: string;
 };
 
 // Placeholder testimonials — sample copy written for this demo, not real reviews.
@@ -322,6 +350,8 @@ export const testimonials: Testimonial[] = [
       "Kallie made our first home purchase feel calm and clear. She answered every question — even the ones we didn't know to ask — and never once made us feel rushed.",
     name: "The Alvarez Family",
     detail: "First-time buyers · Saginaw",
+    rating: 5,
+    date: "March 2025",
   },
   {
     id: "t2",
@@ -329,6 +359,8 @@ export const testimonials: Testimonial[] = [
       "We sold above asking in under two weeks. Her pricing strategy and staging advice were spot on, and communication was honestly better than any agent we'd worked with before.",
     name: "Dana & Michael R.",
     detail: "Sellers · Keller",
+    rating: 5,
+    date: "November 2024",
   },
   {
     id: "t3",
@@ -336,6 +368,8 @@ export const testimonials: Testimonial[] = [
       "Relocating from out of state is stressful, but Kallie knew every neighborhood we asked about in detail. We felt like we had a local friend guiding us the whole way.",
     name: "Priya S.",
     detail: "Relocation buyer · Southlake",
+    rating: 5,
+    date: "August 2024",
   },
   {
     id: "t4",
@@ -343,5 +377,7 @@ export const testimonials: Testimonial[] = [
       "Professional, warm, and genuinely on our side. She negotiated repairs we never would have caught and made closing day completely painless.",
     name: "The Bennett Family",
     detail: "Move-up buyers · Grapevine",
+    rating: 5,
+    date: "May 2024",
   },
 ];

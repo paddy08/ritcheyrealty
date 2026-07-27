@@ -6,8 +6,13 @@ import { HeroSearch } from "@/components/HeroSearch";
 import { NeighborhoodMap } from "@/components/NeighborhoodMap";
 import { RangeLine } from "@/components/RangeLine";
 import { Reveal } from "@/components/Reveal";
-import { TestimonialCarousel } from "@/components/TestimonialCarousel";
-import { featuredListings, site, testimonials } from "@/lib/site";
+import { ReviewScores, Testimonials } from "@/components/Testimonials";
+import {
+  featuredListings,
+  reviewSources,
+  site,
+  testimonials,
+} from "@/lib/site";
 
 export default function HomePage() {
   return (
@@ -92,20 +97,31 @@ export default function HomePage() {
       {/* ---------- From clients ---------- */}
       <section className="bg-limestone-deep">
         <div className="container-edge py-20 md:py-28">
-          <Reveal className="max-w-2xl">
-            <p className="label">From clients</p>
-            <h2 className="display mt-4 text-4xl text-ink sm:text-5xl">
-              What working together looks like
-            </h2>
+          {/* Head and scores share a row from md up: the headline is short and
+              would otherwise leave half the measure empty with the scores
+              stacked under it, reading as two sections instead of one. */}
+          <Reveal className="grid gap-10 md:grid-cols-2 md:items-end md:gap-16">
+            <div>
+              <p className="label">From clients</p>
+              <h2 className="display mt-4 max-w-md text-4xl text-ink sm:text-5xl">
+                What working together looks like
+              </h2>
+            </div>
+            <ReviewScores sources={reviewSources} />
           </Reveal>
-          {/* No Reveal wrapper: the quotes stagger themselves now, and fading
-              the block in as one unit first would muddy that with a second,
-              overlapping opacity transition. */}
-          <div className="mt-14">
-            <TestimonialCarousel items={testimonials} />
-          </div>
-          <p className="mt-12 font-mono text-[11px] text-ink-soft">
+
+          <Reveal className="mt-16 md:mt-20" delay={80}>
+            <div className="datum" />
+          </Reveal>
+
+          <Reveal className="mt-14" delay={140}>
+            <Testimonials items={testimonials} />
+          </Reveal>
+
+          <p className="mt-16 font-mono text-[11px] leading-relaxed text-ink-soft">
             Sample testimonials written for this demo — not real client reviews.
+            Star ratings are placeholders and have not been verified against
+            Google or Zillow.
           </p>
         </div>
       </section>
