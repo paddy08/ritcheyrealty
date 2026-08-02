@@ -4,7 +4,6 @@ import { FeaturedListings } from "@/components/FeaturedListings";
 import { HeroBackdrop } from "@/components/HeroBackdrop";
 import { HeroSearch } from "@/components/HeroSearch";
 import { NeighborhoodMap } from "@/components/NeighborhoodMap";
-import { RangeLine } from "@/components/RangeLine";
 import { Reveal } from "@/components/Reveal";
 import { ReviewScores, Testimonials } from "@/components/Testimonials";
 import {
@@ -17,11 +16,15 @@ import {
 export default function HomePage() {
   return (
     <>
-      {/* ---------- Hero: footage, type set low and flush left, range line ---------- */}
-      <section className="relative isolate flex min-h-dvh flex-col justify-end overflow-hidden">
+      {/* ---------- Hero: footage, type centred in the frame ---------- */}
+      <section className="relative isolate flex min-h-dvh flex-col justify-center overflow-hidden">
         <HeroBackdrop />
 
-        <div className="container-edge pb-14 pt-36 md:pb-16">
+        {/* Centred on both axes. The padding is symmetric so the block sits in
+            the middle of the frame rather than being pushed off it, and is deep
+            enough that the fixed header never crowds the label on a short
+            viewport. */}
+        <div className="container-edge py-28 text-center">
           <p className="animate-rise label-on-ink">
             {site.agent}
             <span aria-hidden="true" className="mx-3 text-limestone/40">
@@ -29,11 +32,13 @@ export default function HomePage() {
             </span>
             Fort Worth &amp; North Texas
           </p>
-          {/* Broken by hand into three lines so the stack holds its shape at
-              every width rather than orphaning a word. */}
-          <h1 className="display mt-6 text-[3.25rem] text-limestone-pale sm:text-7xl lg:text-[5rem]">
-            {/* The gold carries the hook. Lines are hand-broken and kept under
-                ~15 characters so the stack holds its shape down to 390px. */}
+          {/* Two lines, broken at the clause — where the sentence itself
+              breaks — not at an arbitrary character count. The old three-line
+              stack was cut to hold its shape flush left at 390px; centred,
+              that split "the moment you walk in" across two lines while there
+              was room to spare. The measure below is what governs wrapping now,
+              so the phrase stays whole wherever it fits. */}
+          <h1 className="display mx-auto mt-6 max-w-4xl text-[3.25rem] text-limestone-pale sm:text-7xl lg:text-[5rem]">
             <span
               className="animate-rise block text-brass-pale"
               style={{ animationDelay: "120ms" }}
@@ -44,31 +49,29 @@ export default function HomePage() {
               className="animate-rise block"
               style={{ animationDelay: "230ms" }}
             >
-              the moment you
-            </span>
-            <span
-              className="animate-rise block"
-              style={{ animationDelay: "330ms" }}
-            >
-              walk in.
+              the moment you walk in.
             </span>
           </h1>
+          {/* Measure matches the search rule below it, so the two read as one
+              centred column under the headline. It was max-w-sm — a width set
+              for a flush-left column beside empty space — which left it wrapped
+              into a narrow stack under type running three times as wide. Size
+              is up a step too: 16px sat too far below an 80px headline to hold
+              its own in the middle of the frame. */}
           <p
-            className="animate-rise mt-7 max-w-sm leading-relaxed text-limestone/75"
+            className="animate-rise mx-auto mt-7 max-w-2xl text-lg leading-relaxed text-limestone/75"
             style={{ animationDelay: "420ms" }}
           >
             Finding that house across eight North Texas towns — and getting you
             through everything after — is what our team does.
           </p>
           <div
-            className="animate-rise mt-9"
+            className="animate-rise mt-9 flex justify-center"
             style={{ animationDelay: "560ms" }}
           >
             <HeroSearch />
           </div>
         </div>
-
-        <RangeLine animate />
       </section>
 
       {/* ---------- On the market ---------- */}
@@ -118,10 +121,12 @@ export default function HomePage() {
             <Testimonials items={testimonials} />
           </Reveal>
 
+          {/* The two halves of this section have different standing, so the
+              note says which is which rather than disclaiming both. */}
           <p className="mt-16 font-mono text-[11px] leading-relaxed text-ink-soft">
-            Sample testimonials written for this demo — not real client reviews.
-            Star ratings are placeholders and have not been verified against
-            Google or Zillow.
+            Ratings above are real and verified — 4.9 from 63 Google reviews,
+            5.0 from 39 on Zillow. The quotes below are sample testimonials
+            written for this demo, not real client reviews.
           </p>
         </div>
       </section>
@@ -168,6 +173,15 @@ export default function HomePage() {
                     >
                       {site.email}
                     </a>
+                  </dd>
+                </div>
+                <div>
+                  <dt className="caption-on-ink">Office</dt>
+                  <dd className="mt-2 leading-relaxed text-limestone/85">
+                    {site.address.street}
+                    <br />
+                    {site.address.locality}, {site.address.region}{" "}
+                    {site.address.postalCode}
                   </dd>
                 </div>
               </dl>

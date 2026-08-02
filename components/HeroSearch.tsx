@@ -6,12 +6,16 @@ import { useState } from "react";
 /**
  * Hero search — one field, one action.
  *
- * The area filter that used to live here is gone: the range line below the
- * hero puts all eight towns one click away, which beats a dropdown of eight
- * items. What's left is the only thing a dropdown can't do — free text.
+ * The area filter that used to live here is gone: the towns are one click away
+ * from the map and the footer, which beats a dropdown of eight items. What's
+ * left is the only thing a dropdown can't do — free text.
  *
  * Styled as a ruled line rather than a frosted pill so it sits on the footage
  * as type does, not as a floating panel.
+ *
+ * text-left is deliberate: the hero centres its block, and without this the
+ * placeholder and whatever is typed would drift to the middle of the rule
+ * instead of starting at the search icon.
  */
 export function HeroSearch() {
   const router = useRouter();
@@ -24,7 +28,7 @@ export function HeroSearch() {
   };
 
   return (
-    <form onSubmit={submit} className="w-full max-w-xl">
+    <form onSubmit={submit} className="w-full max-w-2xl text-left">
       <div className="group flex items-center gap-4 border-b border-limestone/40 pb-3 transition-colors duration-300 focus-within:border-brass-pale">
         <svg
           aria-hidden="true"

@@ -39,17 +39,21 @@ export function Reveal({
   repeat = false,
 }: RevealProps) {
   const ref = useRef<HTMLElement | null>(null);
+  // Starts hidden, so everything animates in — including whatever is already on
+  // screen at load. Safe to do because the hidden state is expressed as
+  // `data-shown="false"` and the CSS only honours it under `html.js`, which the
+  // head script takes back off if the bundle never hydrates. So a dead script
+  // costs the entrance, not the content; see app/layout.tsx.
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
     const node = ref.current;
     if (!node) return;
 
-    const prefersReduced = window.matchMedia(
-      "(prefers-reduced-motion: reduce)"
-    ).matches;
-
-    if (prefersReduced || !("IntersectionObserver" in window)) {
+    // Reduced motion is handled entirely in CSS now — the fade stays, the
+    // travel is dropped — so the observer still runs and the reveal still
+    // plays. Only a browser with no IntersectionObserver at all short-circuits.
+    if (!("IntersectionObserver" in window)) {
       setVisible(true);
       return;
     }
@@ -71,7 +75,24 @@ export function Reveal({
     );
 
     observer.observe(node);
-    return () => observer.disconnect();
+
+    // The observer is the only thing that reveals a hidden element, so if it
+    // never fires — a threshold never met against a viewport the browser has
+    // resized, say — the content is stranded. Measure directly once the page
+    // has settled and show it if it is genuinely on screen.
+    const failsafe = window.setTimeout(() => {
+      const box = node.getBoundingClientRect();
+      const onScreen =
+        box.bottom > 0 && box.top < (window.innerHeight || 0) && box.height > 0;
+      if (!onScreen) return;
+      setVisible(true);
+      if (!repeat) observer.unobserve(node);
+    }, 2000);
+
+    return () => {
+      window.clearTimeout(failsafe);
+      observer.disconnect();
+    };
   }, [repeat]);
 
   const Tag = as;
@@ -89,17 +110,15 @@ export function Reveal({
     );
   }
 
+  // The hidden state is an attribute, not a utility class, because the CSS that
+  // acts on it is scoped to `html.js`. Written as `opacity-0` here it would
+  // apply unconditionally and take the page down with the bundle.
   return (
     <Tag
       ref={ref as never}
+      data-shown={visible ? "true" : "false"}
       style={visible ? { transitionDelay: `${delay}ms` } : undefined}
-      className={[
-        "transition-[opacity,transform] duration-300 ease-out motion-reduce:transition-none",
-        visible
-          ? "translate-y-0 opacity-100"
-          : "translate-y-3 opacity-0 motion-reduce:translate-y-0 motion-reduce:opacity-100",
-        className,
-      ].join(" ")}
+      className={`reveal ${className}`}
     >
       {children}
     </Tag>

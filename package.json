@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "landmarks": "node build-landmarks.mjs",
+    "optimize": "node optimize-images.mjs"
   },
   "dependencies": {
     "next": "^16.2.11",

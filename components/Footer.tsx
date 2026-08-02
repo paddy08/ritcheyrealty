@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { nav, site, stations } from "@/lib/site";
+import { nav, officeAddress, site, stations } from "@/lib/site";
 
 export function Footer() {
   return (
@@ -19,6 +19,37 @@ export function Footer() {
             Worth and the north side of the metroplex.
           </p>
           <p className="label-on-ink mt-6">{site.agent}</p>
+
+          {/* The office, in a real <address>. These are the site's genuine
+              published details — the only contact block on the page that is
+              not demo content. */}
+          <address className="mt-6 space-y-2 text-sm not-italic leading-relaxed text-limestone/65">
+            <a
+              href={`https://maps.google.com/?q=${encodeURIComponent(
+                `${site.name}, ${officeAddress}`
+              )}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block transition-colors hover:text-limestone-pale"
+            >
+              {site.address.street}
+              <br />
+              {site.address.locality}, {site.address.region}{" "}
+              {site.address.postalCode}
+            </a>
+            <a
+              href={`tel:${site.phone.replace(/[^0-9]/g, "")}`}
+              className="block transition-colors hover:text-limestone-pale"
+            >
+              {site.phone}
+            </a>
+            <a
+              href={`mailto:${site.email}`}
+              className="block break-words transition-colors hover:text-limestone-pale"
+            >
+              {site.email}
+            </a>
+          </address>
         </div>
 
         <div>

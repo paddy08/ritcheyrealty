@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { ComingSoon } from "@/components/ComingSoon";
-import { site } from "@/lib/site";
+import { officeAddress, site } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Contact",
@@ -33,6 +33,26 @@ export default function ContactPage() {
               className="mt-1 inline-block text-lg text-ink-soft transition-colors hover:text-brass-deep"
             >
               {site.email}
+            </a>
+          </dd>
+        </div>
+        <div>
+          <dt className="label">Office</dt>
+          <dd>
+            {/* Opens the address in whatever map app the visitor uses, rather
+                than committing the site to one provider's embed. */}
+            <a
+              href={`https://maps.google.com/?q=${encodeURIComponent(
+                `${site.name}, ${officeAddress}`
+              )}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-1 inline-block not-italic leading-relaxed text-ink-soft transition-colors hover:text-brass-deep"
+            >
+              {site.address.street}
+              <br />
+              {site.address.locality}, {site.address.region}{" "}
+              {site.address.postalCode}
             </a>
           </dd>
         </div>

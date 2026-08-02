@@ -11,6 +11,17 @@
     scroll-behavior: smooth;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
+
+    /* The page never drags sideways. This site has several strips that scroll
+     * horizontally on purpose (the range line, the agent roster, the town
+     * strip); they clip against their own `overflow-x: auto`, and this makes
+     * sure nothing that escapes one can pan the whole document.
+     *
+     * `clip` rather than `hidden` because `hidden` on the root makes it a
+     * scroll container, which breaks `position: sticky` inside; `hidden` is
+     * kept first as the fallback for Safari below 16. */
+    overflow-x: hidden;
+    overflow-x: clip;
   }
 
   body {
@@ -140,21 +151,82 @@
   }
 }
 
-/* ---- Plate reveal: the photograph is uncovered from its bottom edge while
-   the image settles back from a slight over-scale — a print being laid down
-   rather than a card fading in.
+/* ---- Scroll reveals, gated on JavaScript actually running.
 
-   The clip lives on an inner element, never on the one being observed:
-   clip-path is applied before intersection is computed, so a plate that hides
-   itself reports a ratio of 0 forever and would never reveal. ---- */
-.plate-clip {
+   Every hidden state below is scoped to `html[data-js]`. An inline script in
+   the document head stamps that attribute during parse — before first paint,
+   so the entrance plays in full for everything, including content already on
+   screen at load — and then removes it again after four seconds if React has
+   not marked the document hydrated. A bundle that is disabled, blocked, or
+   throwing therefore leaves plain, visible markup instead of erasing the page.
+   That failure is not hypothetical: it is what the dev build did on iOS Safari.
+
+   An attribute, not a class: the server renders className on <html>, so
+   mutating it here would trip React's hydration check on every page load.
+
+   The plate variant uncovers a photograph from its bottom edge while the image
+   settles back from a slight over-scale — a print being laid down rather than a
+   card fading in. Its clip lives on an inner element, never on the observed
+   one: clip-path is applied before intersection is computed, so a plate that
+   hid itself would report a ratio of 0 forever and never reveal. ---- */
+.reveal {
+  transition: opacity 300ms ease-out, transform 300ms ease-out;
+}
+html[data-js] .reveal[data-shown="false"] {
+  opacity: 0;
+  transform: translateY(0.75rem);
+}
+/* The roster cascade runs slower than a plain reveal, and its tick grows down
+   from the datum rather than fading. */
+.reveal-slow {
+  transition-duration: 500ms;
+}
+html[data-js] .reveal-slow[data-shown="false"] {
+  transform: translateY(1rem);
+}
+.reveal-tick {
+  transform-origin: top;
+  transition: transform 500ms ease-out;
+}
+html[data-js] .reveal-tick[data-shown="false"] {
+  transform: scaleY(0);
+}
+
+/* Reduced motion keeps the reveal, minus the motion.
+ *
+ * The concern behind the setting is movement — travel, parallax, scaling —
+ * not a change in opacity, which shifts nothing on screen. So the fade stays
+ * and only the translate and scale are dropped. Content still arrives rather
+ * than being there all along, and someone who turned the setting on (or hit it
+ * by accident) sees a page that reads as designed rather than one that looks
+ * broken.
+ *
+ * The !important and the class selector are both needed to outrank the blanket
+ * `* { transition-duration: 0.01ms !important }` in the base layer above. */
+@media (prefers-reduced-motion: reduce) {
+  .reveal,
+  .reveal-slow,
+  .reveal-tick {
+    transition-property: opacity !important;
+    transition-duration: 320ms !important;
+  }
+  html[data-js] .reveal[data-shown="false"],
+  html[data-js] .reveal-slow[data-shown="false"],
+  html[data-js] .reveal-tick[data-shown="false"] {
+    opacity: 0;
+    transform: none;
+  }
+}
+
+html[data-js] .plate-clip {
   clip-path: inset(100% 0 0 0);
   transition: clip-path 900ms cubic-bezier(0.22, 0.61, 0.36, 1);
 }
-.plate-clip-in {
+.plate-clip-in,
+html[data-js] .plate-clip-in {
   clip-path: inset(0 0 0 0);
 }
-.plate-clip img {
+html[data-js] .plate-clip img {
   transform: scale(1.08);
   transition: transform 1400ms cubic-bezier(0.22, 0.61, 0.36, 1);
 }
@@ -241,4 +313,26 @@
 .animate-landmark {
   animation: landmark-rise 300ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
   transform-origin: 50% 92%;
+}
+
+/* ---- Pop-out: the same rise, gone further. The scrim fades the sheet back
+   and the town comes up over it, overshooting a touch on the way — it is the
+   landmark leaving the map rather than a panel appearing. ---- */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }

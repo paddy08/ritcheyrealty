@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { communities, formatCoords, stations } from "@/lib/site";
@@ -102,22 +102,185 @@ function Readout({
   );
 }
 
+/**
+ * The pop-out: one town, taken off the map and read properly.
+ *
+ * Hovering stands a model up in place, which is a glance. Clicking is a
+ * decision, so it gets the full stop — the sheet goes out of focus behind a
+ * scrim, the model comes up to the middle at a size you can actually look at,
+ * and the town's writing sits directly under it ending in the button that
+ * leaves. The model overlaps the top edge of the card rather than sitting in a
+ * separate box above it, so the two read as one object.
+ *
+ * It covers the map block, not the viewport — deliberately. This is the map's
+ * own gesture, not a site-wide modal, and scoping it here means one rule covers
+ * both layouts: from md the block is exactly the plate, and below md it also
+ * takes in the town strip and the card under the sheet, which is the room the
+ * pop-out needs on a phone (the plate alone is a ~190px band there, too short
+ * to hold a model and a paragraph).
+ *
+ * Note it must not use `position: fixed` to try for the viewport: Reveal wraps
+ * this section in a permanent `translate-y-0`, and a transformed ancestor
+ * becomes the containing block for fixed children. It would silently resolve to
+ * this same box anyway — better to say so than to appear to ask for more.
+ */
+function PopOut({
+  community,
+  sprite,
+  onClose,
+}: {
+  community: Community;
+  sprite: string;
+  onClose: () => void;
+}) {
+  const closeRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    // preventScroll: focusing normally scrolls the element into view, which
+    // would trip the scroll dismissal below the instant it mounts.
+    closeRef.current?.focus({ preventScroll: true });
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+
+    // Scrolling away dismisses it. The overlay is anchored to the map block,
+    // so without this a phone user who flicks the page ends up with a blurred,
+    // scrim-covered slab and a half-cut card trailing off the top of the
+    // screen. The threshold keeps an incidental wobble — or the address bar
+    // collapsing on iOS — from closing it out from under a deliberate tap.
+    const from = window.scrollY;
+    const onScroll = () => {
+      if (Math.abs(window.scrollY - from) > 80) onClose();
+    };
+
+    document.addEventListener("keydown", onKey);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      window.removeEventListener("scroll", onScroll);
+    };
+  }, [onClose]);
+
+  return (
+    <div className="absolute inset-0 z-50">
+      {/* The scrim carries the blur itself rather than leaning on the map's own,
+          so the sheet falls back by the same amount over the strip and the card
+          below it as over the plate. Clicking it closes. */}
+      <button
+        type="button"
+        aria-label={`Close ${community.name}`}
+        onClick={onClose}
+        className="absolute inset-0 w-full cursor-default bg-ink/45 backdrop-blur-[6px] motion-safe:animate-[fade-in_220ms_ease-out]"
+      />
+
+      <div className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-y-auto p-5">
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={`popout-${sprite}`}
+          className="pointer-events-auto relative flex w-full max-w-[19rem] flex-col items-center motion-safe:animate-[pop-in_320ms_cubic-bezier(0.2,0.9,0.3,1.2)] md:max-w-[21rem]"
+        >
+          {/* Anchored to the dialog, not to the overlay's corner. The overlay
+              spans the whole map block, whose top edge sits under the sticky
+              header once the block is scrolled past it — which hid this button
+              outright on a phone. The dialog is always centred in view, and the
+              model is narrower than it, so this corner is both visible and
+              clear of the artwork. */}
+          <button
+            ref={closeRef}
+            type="button"
+            onClick={onClose}
+            aria-label={`Close ${community.name}`}
+            className="absolute right-0 top-0 z-10 flex h-9 w-9 items-center justify-center rounded-[3px] border border-limestone/25 bg-ink/55 text-limestone-pale outline-none transition-colors hover:bg-ink hover:text-brass-pale focus-visible:ring-2 focus-visible:ring-brass-pale"
+          >
+            <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" aria-hidden="true">
+              <path
+                d="M2 2l12 12M14 2L2 14"
+                stroke="currentColor"
+                strokeWidth="1.6"
+                fill="none"
+              />
+            </svg>
+          </button>
+
+          {/* The model overlaps the card's top edge rather than sitting in a
+              box above it, so the two read as one object lifted off the map. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={`/landmarks/${sprite}.webp`}
+            alt=""
+            aria-hidden="true"
+            decoding="async"
+            className="pointer-events-none w-[68%] max-w-[13rem] drop-shadow-[0_14px_22px_rgba(27,36,55,0.45)] md:max-w-[17rem]"
+          />
+
+          <div className="relative -mt-4 w-full rounded-[3px] border border-ink/15 bg-limestone-pale p-6 text-center shadow-[0_18px_40px_rgba(27,36,55,0.3)]">
+            <p className="font-mono text-[11px] tracking-wide text-brass-deep">
+              {formatCoords(community)}
+            </p>
+            <h3
+              id={`popout-${sprite}`}
+              className="display mt-2.5 text-3xl text-ink"
+            >
+              {community.name}
+            </h3>
+            <p className="mt-3 text-sm leading-relaxed text-ink-soft">
+              {community.blurb}
+            </p>
+            <Link href="/communities" className="btn-solid mt-6 w-full">
+              Explore {community.name}
+            </Link>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function NeighborhoodMap() {
-  // `active` is what the panel reads, and it keeps its last town after the
-  // cursor leaves so the panel never empties. `lifted` is what is currently
-  // standing, and starts at nothing — otherwise the map loads already blurred.
+  // Three pieces of state, because hovering and clicking mean different things.
+  // `active` is what the resting panel reads, and it keeps its last town after
+  // the cursor leaves so the panel never empties. `lifted` is what is standing
+  // on the map, and starts at nothing — otherwise the map loads already
+  // blurred. `opened` is the town taken off the map into the pop-out.
   const [active, setActive] = useState(0);
   const [lifted, setLifted] = useState<number | null>(null);
+  const [opened, setOpened] = useState<number | null>(null);
   const currentTown = communities[active];
+
+  // Where focus goes back to when the pop-out closes, so a keyboard user is
+  // returned to the marker they opened rather than to the top of the document.
+  const openerRef = useRef<HTMLElement | null>(null);
 
   const select = (i: number) => {
     setActive(i);
     setLifted(i);
   };
 
+  const open = (i: number, opener: HTMLElement | null) => {
+    openerRef.current = opener;
+    setActive(i);
+    setLifted(null);
+    setOpened(i);
+  };
+
+  const close = useCallback(() => {
+    setOpened(null);
+    const opener = openerRef.current;
+    openerRef.current = null;
+    opener?.focus({ preventScroll: true });
+    // Restoring focus fires that marker's onFocus, which stands its model back
+    // up. With a mouse the next mouseleave takes it down again — on touch there
+    // is no mouseleave, so the sheet stayed blurred with a model up for good.
+    // Clearing after the focus call (React batches both, last write wins) fixes
+    // it without suppressing onFocus, so keyboard focus still lifts normally.
+    setLifted(null);
+  }, []);
+
   const liftedTown = lifted === null ? null : communities[lifted];
   const liftedBox = liftedTown ? landmarkBox(liftedTown.name) : null;
   const liftedSprite = liftedTown ? SPRITE[liftedTown.name] : null;
+  const openedTown = opened === null ? null : communities[opened];
 
   return (
     <div className="relative">
@@ -136,15 +299,18 @@ export function NeighborhoodMap() {
           loading="lazy"
           sizes="(max-width: 1024px) 100vw, 66vw"
           className={`object-cover transition-[filter,transform] duration-300 ease-out ${
-            lifted !== null
+            lifted !== null || opened !== null
               ? "scale-[1.02] blur-[3px] brightness-[0.97]"
               : "scale-100 blur-0"
           }`}
         />
 
         {/* One model at a time, mounted only once taken — eight sprites come to
-            537KB and none of that should be spent before it is asked for. */}
-        {liftedTown && liftedBox && liftedSprite && (
+            537KB and none of that should be spent before it is asked for.
+            Suppressed while the pop-out is up: that model is already standing
+            in the middle of the plate, and a second copy of it on the sheet
+            behind the scrim reads as a duplicate. */}
+        {opened === null && liftedTown && liftedBox && liftedSprite && (
           <div
             key={liftedSprite}
             className="pointer-events-none absolute z-20"
@@ -179,14 +345,15 @@ export function NeighborhoodMap() {
             <button
               key={c.name}
               type="button"
-              // Hover on desktop, tap on mobile — a tap fires mouseenter too,
-              // so both land on the same handler. Focus keeps it reachable
-              // from the keyboard.
+              // Hover stands the model up in place; the click is what opens
+              // the town. Focus mirrors hover so the map is still readable
+              // from the keyboard, and Enter then opens it like a click.
               onMouseEnter={() => select(i)}
               onFocus={() => select(i)}
-              onClick={() => select(i)}
-              aria-label={`${c.name}: ${c.blurb}`}
-              aria-pressed={active === i}
+              onClick={(e) => open(i, e.currentTarget)}
+              aria-label={`Open ${c.name}: ${c.blurb}`}
+              aria-haspopup="dialog"
+              aria-expanded={opened === i}
               className="group absolute cursor-pointer"
               style={{
                 left: `${box.left}%`,
@@ -213,8 +380,15 @@ export function NeighborhoodMap() {
         })}
 
         {/* The reading, top-left — the one corner of this map with no town in
-            it, so the panel covers terrain rather than anything worth seeing. */}
-        <div className="absolute left-4 top-4 z-30 hidden w-[17rem] md:block lg:left-6 lg:top-6 xl:w-[19rem]">
+            it, so the panel covers terrain rather than anything worth seeing.
+            It steps aside for the pop-out, which is the same information said
+            louder; both at once would be the page repeating itself. */}
+        <div
+          className={`absolute left-4 top-4 z-30 hidden w-[17rem] transition-opacity duration-200 md:block lg:left-6 lg:top-6 xl:w-[19rem] ${
+            opened !== null ? "opacity-0" : "opacity-100"
+          }`}
+          aria-hidden={opened !== null}
+        >
           <Readout community={currentTown} />
         </div>
       </div>
@@ -229,8 +403,12 @@ export function NeighborhoodMap() {
             <li key={c.name} className="flex-none">
               <button
                 type="button"
-                onClick={() => select(i)}
-                aria-pressed={isActive}
+                // Below md the markers on the sheet are too small to hit, so
+                // this strip is the only way in — it opens the town outright
+                // rather than only updating the card underneath.
+                onClick={(e) => open(i, e.currentTarget)}
+                aria-haspopup="dialog"
+                aria-expanded={opened === i}
                 className="flex flex-col items-center pt-1"
               >
                 <span
@@ -254,6 +432,19 @@ export function NeighborhoodMap() {
 
       {/* Under md the panel can't sit on the map, so it sits beneath it. */}
       <Readout community={currentTown} className="mt-5 md:hidden" />
+
+      {/* Last, and a sibling of the plate rather than a child of it: the plate
+          clips its overflow, and from md the pop-out is exactly the plate
+          anyway. Keyed by town so opening a second one re-runs the animation
+          instead of swapping the contents of a card already on screen. */}
+      {openedTown && (
+        <PopOut
+          key={openedTown.name}
+          community={openedTown}
+          sprite={SPRITE[openedTown.name]}
+          onClose={close}
+        />
+      )}
     </div>
   );
 }

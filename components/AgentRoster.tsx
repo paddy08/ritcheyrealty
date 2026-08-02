@@ -21,6 +21,10 @@ const STEP = 90; // ms between agents
  */
 export function AgentRoster({ children }: { children: React.ReactNode }) {
   const cards = Children.toArray(children);
+  // Starts hidden so the cascade always plays. Safe because the hidden state is
+  // carried on `data-shown` and only honoured under `html.js` — see the head
+  // script in app/layout.tsx, which drops that class if the bundle never
+  // hydrates, leaving the roster plainly visible instead of blank.
   const [shown, setShown] = useState(false);
   const rowRef = useRef<HTMLDivElement>(null);
 
@@ -28,8 +32,9 @@ export function AgentRoster({ children }: { children: React.ReactNode }) {
     const node = rowRef.current;
     if (!node) return;
 
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduced || !("IntersectionObserver" in window)) {
+    // Reduced motion is a CSS concern now (the cascade fades instead of
+    // travelling), so the observer runs either way.
+    if (!("IntersectionObserver" in window)) {
       setShown(true);
       return;
     }
@@ -43,7 +48,19 @@ export function AgentRoster({ children }: { children: React.ReactNode }) {
       { threshold: 0.15, rootMargin: "0px 0px -8% 0px" }
     );
     observer.observe(node);
-    return () => observer.disconnect();
+
+    // Once we have deliberately hidden the row, an observer that never fires
+    // would strand it. Measure directly after the page settles.
+    const failsafe = window.setTimeout(() => {
+      const box = node.getBoundingClientRect();
+      if (box.bottom > 0 && box.top < (window.innerHeight || 0) && box.height > 0)
+        setShown(true);
+    }, 2000);
+
+    return () => {
+      window.clearTimeout(failsafe);
+      observer.disconnect();
+    };
   }, []);
 
   return (
@@ -66,22 +83,20 @@ export function AgentRoster({ children }: { children: React.ReactNode }) {
             {/* Delays apply on the way in only. Staggering the exit as well
                 would make scrolling away its own little performance; this way
                 the row resets at once and the cascade belongs to the entrance. */}
+            {/* Hidden states ride on data-shown, not on utility classes, so
+                the CSS can scope them to html.js — see Reveal for why. */}
             <span
               aria-hidden="true"
+              data-shown={shown ? "true" : "false"}
               style={shown ? { transitionDelay: `${i * STEP}ms` } : undefined}
-              className={`block h-7 w-px origin-top bg-brass-deep transition-transform duration-500 ease-out ${
-                shown ? "scale-y-100" : "scale-y-0"
-              }`}
+              className="reveal-tick block h-7 w-px bg-brass-deep"
             />
             <div
+              data-shown={shown ? "true" : "false"}
               style={
                 shown ? { transitionDelay: `${i * STEP + 140}ms` } : undefined
               }
-              className={`mt-4 transition-[opacity,transform] duration-500 ease-out motion-reduce:transition-none ${
-                shown
-                  ? "translate-y-0 opacity-100"
-                  : "translate-y-4 opacity-0 motion-reduce:translate-y-0 motion-reduce:opacity-100"
-              }`}
+              className="reveal reveal-slow mt-4"
             >
               {card}
             </div>

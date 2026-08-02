@@ -6,14 +6,31 @@ import { Reveal } from "@/components/Reveal";
 import { agent, team } from "@/lib/site";
 import type { TeamMember } from "@/lib/site";
 
-/** Initials in the display face — the same monogram logic as the mark. */
-function monogram(name: string) {
-  return name
-    .split(" ")
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((w) => w[0])
-    .join("");
+/**
+ * The stand-in portrait.
+ *
+ * A drawn figure, not a face: flat, frontal and featureless, so it reads at a
+ * glance as a blank waiting to be filled rather than as a photograph of the
+ * person named beneath it. It sits in the page's own palette — brass on
+ * limestone, the plate's edge unchanged — so a roster of five of them still
+ * scans as one set instead of five broken images.
+ *
+ * Marked decorative: the accessible content is the name and role set below the
+ * plate, and the notice under the roster says these are placeholders in words.
+ */
+function PlaceholderPortrait() {
+  return (
+    <div className="plate aspect-[4/5] w-full">
+      <svg
+        viewBox="0 0 80 100"
+        aria-hidden="true"
+        className="absolute inset-0 h-full w-full text-brass-deep/30"
+      >
+        <circle cx="40" cy="41" r="14" fill="currentColor" />
+        <path d="M11 100v-9a29 29 0 0 1 58 0v9Z" fill="currentColor" />
+      </svg>
+    </div>
+  );
 }
 
 function Portrait({
@@ -28,7 +45,11 @@ function Portrait({
       <div className="plate aspect-[4/5] w-full">
         <Image
           src={member.photo}
-          alt={`${member.name}, ${member.role} at Ritchey Realty`}
+          // Named only if a name was supplied — an anonymous slot describes
+          // the role rather than printing "undefined" into the alt text.
+          alt={`${member.name ? `${member.name}, ` : ""}${
+            member.role
+          } at Ritchey Realty`}
           fill
           loading="lazy"
           sizes={sizes}
@@ -37,15 +58,8 @@ function Portrait({
       </div>
     );
   }
-  // No published photograph. A stock face under a real person's name would
-  // misrepresent them, so the plate carries their initials instead.
-  return (
-    <div className="plate flex aspect-[4/5] w-full items-center justify-center bg-limestone-deep">
-      <span aria-hidden="true" className="display text-5xl text-brass-deep/70">
-        {monogram(member.name)}
-      </span>
-    </div>
-  );
+  // No photograph supplied. See the note on `team` in lib/site.ts.
+  return <PlaceholderPortrait />;
 }
 
 export function AgentIntro() {
@@ -118,20 +132,28 @@ export function AgentIntro() {
         <p className="label mb-6">The agents</p>
         <AgentRoster>
           {team.map((member) => (
-            <div key={member.name}>
+            <div key={member.slot}>
               <Portrait
                 member={member}
                 sizes="(max-width: 640px) 9.5rem, (max-width: 1024px) 33vw, 20vw"
               />
-              <p className="display-sm mt-4 text-lg leading-tight text-ink">
-                {member.name}
+              {/* The slot number takes the name's exact setting, only muted:
+                  when a real name lands here nothing about the card moves, and
+                  until then the greyed line reads as a blank rather than as
+                  somebody called "Team member 01". */}
+              <p
+                className={`display-sm mt-4 text-lg leading-tight ${
+                  member.name ? "text-ink" : "text-ink-muted"
+                }`}
+              >
+                {member.name ?? member.slot}
               </p>
               <p className="mt-1.5 font-mono text-[10px] uppercase tracking-widest text-brass-deep">
                 {member.role}
               </p>
-              {/* Licence only. Bios are out: three of the six published one
-                  and three didn't, and a row where half the cards carry a
-                  paragraph reads as missing data rather than as design. */}
+              {/* Licence only, and only if one is supplied. Bios are out: a row
+                  where half the cards carry a paragraph reads as missing data
+                  rather than as design. */}
               {member.license && (
                 <p className="mt-2 font-mono text-[11px] text-ink-muted">
                   TREC #{member.license}
@@ -140,8 +162,13 @@ export function AgentIntro() {
             </div>
           ))}
         </AgentRoster>
-        <p className="mt-10 font-mono text-[11px] text-ink-muted">
-          Team names, roles and licence numbers from ritcheyrealty.com.
+        {/* Set as one caption, not a warning banner: the greyed slots and blank
+            plates already read as placeholders, so this only has to say so in
+            words and be precise about how little is being claimed. */}
+        <p className="mt-10 max-w-xl font-mono text-[11px] leading-relaxed text-ink-muted">
+          Placeholder roster. The photographs, names and licence numbers of the
+          real team have been removed — nothing on these cards identifies
+          anyone. Only the size of the team and each role is real.
         </p>
       </div>
     </section>

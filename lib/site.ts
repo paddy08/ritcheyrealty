@@ -2,15 +2,26 @@
 // All listing/testimonial data below is FICTIONAL sample content created for this
 // demo — none of it is scraped from the live Ritchey Realty site.
 
+// Real, published contact details for the office — not placeholders. Only the
+// listings, testimonials and team portraits below are demo content.
 export const site = {
   name: "Ritchey Realty",
   agent: "Kallie Ritchey",
   tagline: "Fort Worth & DFW Real Estate",
-  phone: "(817) 555-0142", // placeholder
-  email: "hello@ritcheyrealty.com", // placeholder
+  phone: "(682) 788-9060",
+  email: "team@ritcheyrealty.com",
+  address: {
+    street: "9800 Hillwood Parkway, Suite 140",
+    locality: "Fort Worth",
+    region: "TX",
+    postalCode: "76244",
+  },
   serviceArea:
     "Fort Worth, Grapevine, Keller, Haslet, North Richland Hills, Roanoke, Saginaw & Southlake",
 };
+
+/** One line, the way you'd write it on an envelope. */
+export const officeAddress = `${site.address.street}, ${site.address.locality}, ${site.address.region} ${site.address.postalCode}`;
 
 // Kallie's title, bio and figures below are taken from ritcheyrealty.com
 // (/about-kallie). Nothing here is invented.
@@ -30,60 +41,41 @@ export const agent = {
     { label: "Licensed since", value: "2010" },
     { label: "Broker since", value: "2015" },
     { label: "Sales a year", value: "~50" },
-    { label: "Google reviews", value: "50+" },
+    { label: "Google reviews", value: "63" },
   ],
 };
 
 /**
- * The team, from ritcheyrealty.com/team-page and the individual profile pages.
- * Titles and bio lines are the site's own words, trimmed — none invented.
+ * The team — DELIBERATELY ANONYMOUS.
  *
- * Two members publish a photograph; the rest fall back to a monogram, because
- * putting a stock face under a real person's name would misrepresent them.
- * Drop a URL into `photo` and it takes over.
+ * Nothing identifying anyone is committed here: no photographs, no names, no
+ * TREC licence numbers, no direct emails or mobile numbers. This is demo work,
+ * and the real team's likenesses and credentials aren't ours to republish just
+ * to illustrate a layout. Stand-in faces or invented names would be worse than
+ * blanks, because a plausible-looking card asserts something about a real
+ * person; a numbered slot asserts nothing.
  *
- * Direct mobile numbers and personal email addresses are published on the live
- * site but are deliberately not committed here; enquiries route to the office.
+ * What's left is only the shape of the roster: how many people and what each
+ * one does. Fill in `name`, `photo`, `license` and `email` per member when the
+ * client supplies them and each card takes the real content without any other
+ * change — that's what these fields are optional for.
  */
 export type TeamMember = {
-  name: string;
+  /** Placeholder slot number until a real name is supplied. */
+  slot: string;
   role: string;
+  name?: string;
   email?: string;
   photo?: string;
   license?: string;
 };
 
 export const team: TeamMember[] = [
-  {
-    name: "Kelly Saint Patrick",
-    role: "Marketing & Events Director",
-    email: "kelly@ritcheyrealty.com",
-    photo: "/team/kelly_patrick.webp",
-  },
-  {
-    name: "Jared Holbert",
-    role: "Agent",
-    license: "0601709",
-    photo: "/team/jared_holbert.webp",
-  },
-  {
-    name: "David Capps",
-    role: "Agent",
-    license: "819141",
-    photo: "/team/david_capps.webp",
-  },
-  {
-    name: "Brittany Terry",
-    role: "Agent",
-    license: "0722815",
-    photo: "/team/brittany_terry.webp",
-  },
-  {
-    name: "Chasstin Terry",
-    role: "Agent",
-    license: "0768595",
-    photo: "/team/chasstin_terry.webp",
-  },
+  { slot: "Team member 01", role: "Marketing & Events Director" },
+  { slot: "Team member 02", role: "Agent" },
+  { slot: "Team member 03", role: "Agent" },
+  { slot: "Team member 04", role: "Agent" },
+  { slot: "Team member 05", role: "Agent" },
 ];
 
 /**
@@ -195,6 +187,14 @@ export type Community = {
   lat: number;
   lon: number;
 };
+
+/*
+ * The message widget deliberately has no endpoint. This is a demo build with
+ * no backend — `output: "export"` in next.config.mjs — so the form validates
+ * and then tells the visitor plainly that nothing was sent. Wiring it to a
+ * real form service is a change to components/MessageWidget.tsx, not a config
+ * value sitting here pretending to be switched off.
+ */
 
 /** Format a coordinate pair the way a plat does: 32.7555° N, 97.3308° W */
 export function formatCoords({ lat, lon }: Pick<Community, "lat" | "lon">) {
@@ -310,25 +310,24 @@ export const communityImages: Record<string, { src: string; alt: string }> = {
 /**
  * Aggregate star ratings, shown as the testimonial section's header stat.
  *
- * PLACEHOLDER FIGURES. Only the review *count* is a checked fact — it comes
- * from ritcheyrealty.com and is also carried in `agent.facts` above. Neither
- * star rating has been verified against Google or Zillow, so both are marked
- * here rather than in a comment somewhere the next person won't read. Replace
- * with the real numbers before this goes anywhere near production; the section
- * renders whatever is in this array, so removing a source removes its stat.
+ * Real, verified figures — checked against Google and Zillow. These are the
+ * one part of the testimonials section that is not demo content, which is why
+ * the note under it distinguishes the two. The section renders whatever is in
+ * this array, so removing a source removes its stat.
  */
 export type ReviewSource = {
   source: string;
-  /** Out of 5. Placeholder — see above. */
+  /** Out of 5. */
   rating: number;
-  /** Displayed verbatim, so "50+" and "31" both work. */
+  /** Displayed verbatim, so "63" and "50+" both work. */
   count: string;
+  /** Checked against the source itself, not taken from the marketing site. */
   verified: boolean;
 };
 
 export const reviewSources: ReviewSource[] = [
-  { source: "Google", rating: 4.9, count: "50+", verified: false },
-  { source: "Zillow", rating: 5.0, count: "20+", verified: false },
+  { source: "Google", rating: 4.9, count: "63", verified: true },
+  { source: "Zillow", rating: 5.0, count: "39", verified: true },
 ];
 
 export type Testimonial = {
