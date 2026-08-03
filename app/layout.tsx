@@ -18,26 +18,33 @@ const caslon = Libre_Caslon_Display({
 });
 
 // Body: Archivo — an American grotesque, sturdy at small sizes.
+//
+// One weight, because one weight is all the site ever asks for: there is no
+// font-weight class anywhere in app/ or components/, no font-weight in the
+// stylesheet, and no <strong>. 500 and 600 were two extra faces on the
+// critical path that nothing on the page could render.
 const archivo = Archivo({
   subsets: ["latin"],
   display: "swap",
   variable: "--font-sans",
-  weight: ["400", "500", "600"],
+  weight: ["400"],
 });
 
 // Utility: DM Mono — labels, coordinates, and property data.
 //
-// preload: false because these three faces are ~26KB of the ~77KB of font the
-// page was preloading at high priority, and none of it sets a word larger than
-// a 10px label. That bandwidth competes on a phone link with the display face,
-// which is what the hero headline — the largest contentful paint — is set in.
-// Mono still loads; it just stops queue-jumping the type that gets measured.
+// Preloaded, and deliberately so. Dropping it from the preload list looked
+// like a saving and was the opposite: the face still had to load, but it was
+// discovered only once the stylesheet had been parsed, and an 8KB file then
+// finished last of everything and gated first paint. It sets the label above
+// the hero headline, so it is above-the-fold type and belongs in the initial
+// fetch alongside the other two.
+//
+// One weight, for the same reason as Archivo above.
 const dmMono = DM_Mono({
   subsets: ["latin"],
   display: "swap",
   variable: "--font-mono",
-  weight: ["300", "400", "500"],
-  preload: false,
+  weight: ["400"],
 });
 
 export const metadata: Metadata = {

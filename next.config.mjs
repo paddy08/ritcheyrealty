@@ -23,6 +23,12 @@ const nextConfig = {
   ],
 
   // Fully static build — outputs to ./out for Cloudflare Pages (no server runtime).
+  //
+  // experimental.inlineCss was tried here and measured worse, so it is not set:
+  // it does remove a render-blocking request, but the stylesheet lands as ~148KB
+  // of markup (~28KB compressed against ~15KB before), and the larger document
+  // cost more first paint than the saved round trip returned — FCP 0.9s to 1.2s
+  // over five runs. Worth re-testing only if the stylesheet gets much smaller.
   output: "export",
 
   images: {
