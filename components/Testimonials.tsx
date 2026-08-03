@@ -604,6 +604,81 @@ function SourceMark({ source }: { source: string }) {
   return null;
 }
 
+/**
+ * A rating counting up to itself, once, when it comes into view.
+ *
+ * The number rendered on the server is the real one, and the client's first
+ * render matches it — the count only starts in an effect. That ordering is the
+ * whole design: a component that rendered "0.0" and relied on JavaScript to
+ * correct it would publish a wrong figure to anything that doesn't run scripts,
+ * and these two numbers are the one part of this section that is real and
+ * checkable (see `reviewSources` in lib/site.ts). A rating is not a decoration
+ * to be wrong about while a bundle loads.
+ *
+ * Reduced motion skips the count entirely rather than shortening it. The
+ * concern there is movement, and a number spinning through forty values is
+ * movement — there is no version of this effect that respects the setting, so
+ * it simply doesn't run.
+ *
+ * rAF rather than a CSS transition because what is animating is text content,
+ * which CSS cannot interpolate.
+ */
+function CountUpRating({ value }: { value: number }) {
+  const [shown, setShown] = useState(value);
+  const ref = useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    const node = ref.current;
+    if (!node) return;
+    if (!("IntersectionObserver" in window)) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    let raf = 0;
+    let start = 0;
+    const DURATION = 1100;
+
+    const step = (now: number) => {
+      if (!start) start = now;
+      const t = Math.min((now - start) / DURATION, 1);
+      // Ease-out cubic: fast off the mark, settling onto the final figure.
+      const eased = 1 - Math.pow(1 - t, 3);
+      setShown(value * eased);
+      if (t < 1) raf = requestAnimationFrame(step);
+      else setShown(value); // land exactly, never on a rounding artefact
+    };
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          // One-shot. A rating that re-counts every time it scrolls past reads
+          // as a widget rather than as a fact.
+          observer.unobserve(entry.target);
+          setShown(0);
+          raf = requestAnimationFrame(step);
+        }
+      },
+      { threshold: 0.4 }
+    );
+    observer.observe(node);
+
+    return () => {
+      cancelAnimationFrame(raf);
+      observer.disconnect();
+    };
+  }, [value]);
+
+  // aria-hidden on the animating text, with the settled figure exposed to
+  // assistive tech instead: a live count would otherwise be announced dozens of
+  // times on its way up.
+  return (
+    <span ref={ref}>
+      <span aria-hidden="true">{shown.toFixed(1)}</span>
+      <span className="sr-only">{value.toFixed(1)}</span>
+    </span>
+  );
+}
+
 export function ReviewScores({
   sources,
 }: {
@@ -615,8 +690,11 @@ export function ReviewScores({
         <div key={s.source} className="flex-none">
           <dt className="sr-only">{s.source} rating</dt>
           <dd>
-            <span className="display block text-[2.75rem] leading-none text-ink">
-              {s.rating.toFixed(1)}
+            {/* Tabular figures: the count runs through 0.0-4.9 and proportional
+                digits are different widths, so without this the number and the
+                "/5" beside it jitter sideways the whole way up. */}
+            <span className="display block text-[2.75rem] leading-none text-ink [font-variant-numeric:tabular-nums]">
+              <CountUpRating value={s.rating} />
               <span className="ml-1 align-baseline text-[1.25rem] text-ink/35">
                 /5
               </span>

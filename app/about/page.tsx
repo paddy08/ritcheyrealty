@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { CredentialLine } from "@/components/CredentialLine";
 import { Faq } from "@/components/Faq";
@@ -7,23 +6,18 @@ import { JsonLd } from "@/components/JsonLd";
 import { MessageTrigger } from "@/components/MessageTrigger";
 import { RangeLine } from "@/components/RangeLine";
 import { Reveal } from "@/components/Reveal";
+import { ServiceDeck } from "@/components/ServiceDeck";
 import { ReviewScores } from "@/components/Testimonials";
 import {
   agent,
   communities,
   faqs,
-  formatCoords,
   officeAddress,
   press,
   reviewSources,
   services,
   site,
 } from "@/lib/site";
-
-// Her base, for the coordinate readout at the head of the sheet. Read out of
-// `communities` rather than typed again, so it stays the same figure the map
-// and the range line project from.
-const keller = communities.find((c) => c.name === "Keller");
 
 export const metadata: Metadata = {
   title: "About Kallie Ritchey",
@@ -176,35 +170,103 @@ export default function AboutPage() {
           register at the corners, and the title block rules itself last. Same
           grammar as the homepage hero — station ticks after the headline —
           applied to a sheet instead of footage. */}
-      <section className="container-edge flex min-h-dvh flex-col justify-center pb-16 pt-28 md:pb-20 md:pt-32">
-        {/* The head of the sheet: what it is, and where it was drawn. The
-            coordinate is Keller's, from `communities` — she is based there, and
-            it is the same readout the map uses. */}
-        <div className="flex items-baseline justify-between gap-6">
-          <p className="animate-rise label">About</p>
-          <p
-            className="animate-rise font-mono text-[10px] uppercase tracking-widest text-ink-muted"
-            style={{ animationDelay: "80ms" }}
-          >
-            <span className="hidden sm:inline">Based in Keller — </span>
-            {keller ? formatCoords(keller) : null}
-          </p>
-        </div>
+      <section className="relative isolate flex min-h-dvh flex-col justify-center overflow-hidden pb-12 pt-20 md:pb-14 md:pt-24">
+        {/* The sheet itself, ruled faintly. Sits under the photograph rather
+            than instead of it, so if the image is ever missing the hero still
+            has a surface instead of going blank. */}
         <div
-          className="datum animate-draw mt-4"
-          style={{ animationDelay: "160ms" }}
+          aria-hidden="true"
+          // Halved on a phone. The cell is a fixed 5.5rem, so on a ~400px
+          // screen only four or five columns land and the rule spacing reads as
+          // a table rather than as tooth in the paper.
+          className="survey-grid pointer-events-none absolute inset-0 -z-30 opacity-40 md:opacity-100"
         />
 
-        {/* Centred against the plate rather than top-aligned with it. The type
-            column is a third shorter than a 4:5 portrait, and hanging both from
-            the same top edge dumped all of that slack into one dead corner
-            under the buttons. Split, it reads as margin. */}
-        <div className="mt-10 grid gap-12 md:mt-12 md:grid-cols-[minmax(0,1fr)_minmax(0,20rem)] md:items-center md:gap-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,23rem)] lg:gap-20">
-          <div>
+        {/* The room.
+            A plain <picture>, not next/image: local files in /public are handed
+            straight back by the custom loader (see lib/imageLoader.ts), so
+            next/image would ship one desktop-sized file to every phone. The
+            media-switched sources are the only way to get a real responsive
+            behaviour out of a static export here, and this is a full-bleed
+            background on a project that has already fought its page weight down
+            from 2.8MB. */}
+        {/* Inset from the top by the header's height rather than filling the
+            section. The bar is opaque limestone, so anything the artwork puts
+            up there is simply hidden behind it — and what it was putting there
+            was the top of her head. Starting the image below the bar is what
+            actually fixes that; anchoring alone only moved which part got
+            cropped. */}
+        {/* Two different jobs at two different shapes.
+            From md up the artwork is full-height and the type sits beside it in
+            the empty left half — the composition it was made for. On a portrait
+            phone there is no beside: the frame is landscape and the viewport is
+            tall, so full-bleed put the headline directly across her face. There
+            it becomes a bottom band instead, with its top edge masked into the
+            paper, and the type has clean limestone above it. */}
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 -z-20 h-[52%] overflow-hidden opacity-70 [mask-image:linear-gradient(to_bottom,transparent,#000_22%)] md:top-20 md:h-auto md:opacity-100 md:[mask-image:none]">
+          <picture>
+            <source
+              media="(max-width: 768px)"
+              srcSet="/about-hero-mobile.webp"
+              type="image/webp"
+            />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/about-hero.webp"
+              alt=""
+              fetchPriority="high"
+              decoding="async"
+              // object-top, never centre: she stands in the upper half of the
+              // frame, so every pixel this has to give up should come off the
+              // bottom, which is floor and cabinet. On a portrait phone the
+              // crop is horizontal instead, and it is biased right because that
+              // is the side she is on.
+              className="h-full w-full object-cover object-[68%_top] md:object-top"
+            />
+          </picture>
+        </div>
+
+        {/* One scrim, weighted entirely to the left.
+            It has exactly one job: hold the type side flat enough for ink to
+            sit on. It used to also knock the whole frame back, which made sense
+            when the artwork was scenery behind a portrait — now that she is in
+            the artwork, washing the right-hand side was washing out the subject
+            of the picture. So it runs to transparent well before it reaches
+            her. */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 -z-10 hidden bg-gradient-to-r from-limestone/95 via-limestone/70 via-45% to-transparent to-72% md:block"
+        />
+
+        <div className="container-edge">
+          {/* The head of the sheet.
+              No coordinate readout here any more. It printed Keller's latitude
+              and longitude, which is a real figure and completely inert — there
+              is nothing a visitor does with it, and it was taking the eye to the
+              opposite corner from the headline on the first screen of the
+              page. */}
+          <p className="animate-rise label">About</p>
+          <div
+            className="datum animate-draw mt-4"
+            style={{ animationDelay: "160ms" }}
+          />
+
+          {/* One column, not two.
+              There was a cut-out portrait in a second column here. It came out
+              when she was composited into the backdrop itself: the page was
+              then printing her twice, once at full height in the photograph and
+              again as a small figure on top of it. The type holds the left half
+              and the artwork carries the right, which is what the artwork was
+              built to do — so the measure below is what keeps the two apart,
+              not a grid track. */}
+          <div className="mt-9 md:mt-10">
+            <div className="max-w-xl">
             {/* Broken at the clause, as on the homepage — not at a character
                 count. Set a step under the homepage's 5rem so the two heroes
                 are the same voice at different volumes. */}
-            <h1 className="display max-w-2xl text-[3.25rem] text-ink sm:text-6xl lg:text-[4.75rem]">
+            {/* A step smaller on a phone than it was: the type block has to
+                finish above the artwork band rather than run into it. */}
+            <h1 className="display max-w-2xl text-[2.5rem] text-ink sm:text-[3.5rem] lg:text-[4.25rem]">
               <span
                 className="animate-rise block"
                 style={{ animationDelay: "300ms" }}
@@ -219,11 +281,16 @@ export default function AboutPage() {
               </span>
             </h1>
             <p
-              className="animate-rise mt-7 max-w-lg text-lg leading-relaxed text-ink-soft"
+              className="animate-rise mt-6 max-w-lg leading-relaxed text-ink-soft md:mt-7 md:text-lg"
               style={{ animationDelay: "600ms" }}
             >
-              {agent.statement} Traditional and luxury markets alike, from Fort
-              Worth up through Keller, Southlake and Grapevine.
+              {/* Deliberately not `agent.statement`, which is the homepage's
+                  line and opens "Licensed since 2010. Broker since 2015" — the
+                  two figures the credential band sets one screen below this.
+                  The band owns the dates; this says what she actually does. */}
+              Broker and owner of Ritchey Realty, and a coach to other agents
+              nationally. She works the whole north side of the metroplex —
+              first houses and custom estates, run the same way.
             </p>
             <div
               className="animate-rise mt-9 flex flex-wrap gap-4"
@@ -237,80 +304,31 @@ export default function AboutPage() {
                 Read reviews
               </Link>
             </div>
-          </div>
-
-          <div>
-            {/* The marks sit outside the plate, so they cannot live inside the
-                Reveal: its plate variant clips its children to the plate's own
-                box on the way in, which would crop them away. */}
-            <div className="relative">
-              {/* The plate uncovers from its bottom edge while the photograph
-                  settles back from an over-scale — the same print-being-laid-
-                  down reveal the intro video gets on the homepage. */}
-              <Reveal variant="plate" delay={420}>
-                <div className="plate aspect-[4/5] w-full">
-                  <Image
-                    src={agent.photo}
-                    alt={`${agent.name}, ${agent.role} at ${site.name}`}
-                    fill
-                    priority
-                    sizes="(max-width: 768px) 100vw, 23rem"
-                    className="object-cover"
-                  />
-                </div>
-              </Reveal>
-              {/* Outset less on a phone. The plate runs the full width of the
-                  container there, so a 12px outset put the right-hand marks
-                  within a few pixels of the screen edge and they read as type
-                  that had escaped rather than as trim marks. */}
-              {[
-                ["-left-2 -top-2 border-l border-t sm:-left-3 sm:-top-3", "1080ms"],
-                ["-right-2 -top-2 border-r border-t sm:-right-3 sm:-top-3", "1140ms"],
-                ["-bottom-2 -left-2 border-b border-l sm:-bottom-3 sm:-left-3", "1200ms"],
-                ["-bottom-2 -right-2 border-b border-r sm:-bottom-3 sm:-right-3", "1260ms"],
-              ].map(([pos, delay]) => (
-                <span
-                  key={pos}
-                  aria-hidden="true"
-                  className={`crop-mark animate-rise ${pos}`}
-                  style={{ animationDelay: delay }}
-                />
-              ))}
-            </div>
+            {/* The licence numbers used to sit under the portrait. They are
+                still worth stating plainly on the page she is introduced on —
+                they are checkable, which is the point — so they move here
+                rather than leaving with the image. */}
             <p
-              className="animate-rise mt-5 font-mono text-[11px] leading-relaxed text-ink-muted"
-              style={{ animationDelay: "1260ms" }}
+              className="animate-rise mt-8 font-mono text-[11px] leading-relaxed text-ink-muted"
+              style={{ animationDelay: "880ms" }}
             >
               Licensing: {agent.license}
             </p>
+            </div>
           </div>
         </div>
 
-        {/* The title block — the figures a drawing carries in its bottom
-            corner. Real, checkable numbers, the same four the homepage prints
-            under her bio. */}
-        <div className="mt-12 md:mt-14">
-          <div
-            className="datum animate-draw"
-            style={{ animationDelay: "1100ms" }}
-          />
-          <dl className="grid grid-cols-2 gap-x-8 gap-y-7 pt-6 sm:grid-cols-4">
-            {agent.facts.map((fact, i) => (
-              <div
-                key={fact.label}
-                className="animate-rise"
-                style={{ animationDelay: `${1200 + i * 90}ms` }}
-              >
-                <dt className="font-mono text-[10px] uppercase leading-relaxed tracking-widest text-ink-muted">
-                  {fact.label}
-                </dt>
-                <dd className="display mt-2 text-3xl text-brass-deep sm:text-4xl">
-                  {fact.value}
-                </dd>
-              </div>
-            ))}
-          </dl>
-        </div>
+        {/* No figure strip here.
+
+            There was one — 2010 / 2015 / ~50 / 63, set large in brass. It came
+            out because every number in it is already stated twice within a
+            screen of itself: the standfirst above says "Licensed since 2010,
+            broker since 2015, around 50 sales a year" in prose, the credential
+            band immediately below sets 2010 and 2015 as figures in exactly the
+            same face, and the review scores further down carry the 63. Three
+            tellings of the same four facts, the middle one adding nothing. The
+            hero keeps the weight it needs from the rule, the headline and the
+            plate. */}
       </section>
 
       {/* ---------- The record: the range line's device, applied to a career ----------
@@ -319,22 +337,25 @@ export default function AboutPage() {
           range line further down. Dropped straight in under the hero it read as
           a stripe the page had not accounted for. */}
       <section>
-        <div className="container-edge pb-12 pt-20 md:pb-14 md:pt-24">
-          <Reveal className="grid gap-8 md:grid-cols-2 md:items-end md:gap-16">
-            <div>
-              <p className="label">The record</p>
-              <h2 className="display mt-4 text-4xl text-ink sm:text-5xl">
+        {/* Heading and band are one block on one field.
+            They were two: a heading on limestone, then the ink band under it,
+            with section padding between them and above them. That put two
+            stacked gaps between the hero and the only thing this section is —
+            roughly a third of a screen of empty paper introducing a strip that
+            introduces itself. On the ink with the stations, it reads as one
+            module and the datum still does its job as the rule the marks hang
+            from. */}
+        <div className="bg-ink">
+          <div className="container-edge pb-10 pt-16 md:pb-12 md:pt-20">
+            <Reveal>
+              <p className="label-on-ink">The record</p>
+              <h2 className="display mt-4 text-4xl text-limestone-pale sm:text-5xl">
                 What&apos;s on paper
               </h2>
-            </div>
-            <p className="max-w-md leading-relaxed text-ink-soft md:pb-2">
-              Two of these carry a year because two of them have one. The rest
-              carry the body that issued them — nothing here is dated by
-              guesswork.
-            </p>
-          </Reveal>
+            </Reveal>
+          </div>
+          <CredentialLine />
         </div>
-        <CredentialLine />
       </section>
 
       {/* ---------- The long version ---------- */}
@@ -346,7 +367,11 @@ export default function AboutPage() {
           </h2>
         </Reveal>
 
-        <div className="mt-12 grid gap-12 md:grid-cols-[minmax(0,1fr)_minmax(0,18rem)] md:gap-16">
+        {/* The rail takes 22rem, not 18. The body is capped at its reading
+            measure, so any width the rail does not use turns into slack inside
+            the left track rather than a wider paragraph — widening the rail is
+            what actually closes the gap. */}
+        <div className="mt-12 grid gap-12 md:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] md:gap-14 lg:gap-20">
           <Reveal delay={80}>
             {/* The opening paragraph takes a sunk initial — the way a deed
                 opens. Only the first: a second one would read as decoration
@@ -360,11 +385,23 @@ export default function AboutPage() {
             </div>
           </Reveal>
 
-          {/* Her stated mission, set as a quotation and attributed. It is the
-              one line of brochure register on the page, and quoting it rather
-              than absorbing it into the body copy is what makes that honest —
-              it reads as her claim about herself, which is what it is. */}
-          <Reveal delay={160} className="md:pt-2">
+          {/* The rail: a quotation, then where she turns up.
+              The quote alone left most of this column empty — three long
+              paragraphs beside four short lines, and the difference showing as
+              a hole. The press list was in a section of its own underneath,
+              which is a sidebar's worth of content given a full band of the
+              page. Moving it here fills the column with something real rather
+              than padding it, and takes a whole section's worth of gap out of
+              the page on the way. */}
+          {/* Pulled up level with the heading rather than starting where the
+              body copy does. The rail is supporting material, so hanging it
+              from the section's own top edge sits it beside the whole block
+              instead of appearing to belong to the first paragraph. */}
+          <Reveal delay={160} className="md:-mt-24 lg:-mt-28">
+            {/* Her stated mission, set as a quotation and attributed. It is the
+                one line of brochure register on the page, and quoting it rather
+                than absorbing it into the body copy is what makes that honest —
+                it reads as her claim about herself, which is what it is. */}
             <figure className="border-t border-ink/15 pt-6">
               <blockquote className="display-sm text-xl leading-[1.45] text-ink">
                 &ldquo;{agent.mission}&rdquo;
@@ -373,6 +410,33 @@ export default function AboutPage() {
                 {agent.name} — ritcheyrealty.com
               </figcaption>
             </figure>
+
+            <p className="label mt-12">On the record</p>
+            {/* The closing rule is the list's own bottom border rather than an
+                empty trailing <li>, which would put a contentless item in the
+                accessibility tree just to draw a line. */}
+            <ul className="mt-5 border-b border-ink/15">
+              {press.map((p) => (
+                // Each row steps right under the pointer, the way a line being
+                // read is followed with a finger. Nothing here is a link —
+                // there is no clipping to link to — so the cue stops at the
+                // type.
+                <li key={p.outlet} className="group border-t border-ink/15">
+                  <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 py-4">
+                    <span className="display-sm text-lg text-ink transition-transform duration-300 ease-out group-hover:translate-x-1.5 motion-reduce:group-hover:translate-x-0">
+                      {p.outlet}
+                    </span>
+                    <span className="font-mono text-[10px] uppercase tracking-widest text-ink-muted transition-colors duration-300 group-hover:text-brass-deep">
+                      {p.kind}
+                    </span>
+                  </div>
+                </li>
+              ))}
+            </ul>
+            <p className="mt-4 font-mono text-[11px] leading-relaxed text-ink-muted">
+              Set as type, not borrowed logos — no mark on this page belongs to
+              anyone but Ritchey Realty.
+            </p>
           </Reveal>
         </div>
       </section>
@@ -391,68 +455,16 @@ export default function AboutPage() {
             </p>
           </Reveal>
 
-          <div className="mt-14 grid gap-x-10 gap-y-12 md:grid-cols-3">
-            {services.map((s, i) => (
-              // Numbered off a datum, the way the listing sheet and the roster
-              // both hang their content from a rule.
-              // The rule inks up under the pointer and the numeral comes with
-              // it — the whole column is the target, so the cue belongs to the
-              // column rather than to a link inside it.
-              <Reveal key={s.n} delay={80 + i * 80} className="group">
-                <div className="h-px w-full bg-ink/15 transition-colors duration-300 group-hover:bg-brass-deep" />
-                <p className="display mt-5 text-3xl leading-none text-ink/25 transition-colors duration-300 group-hover:text-brass-deep">
-                  {s.n}
-                </p>
-                <h3 className="display-sm mt-4 text-2xl text-ink">{s.title}</h3>
-                <p className="mt-4 leading-relaxed text-ink-soft">{s.body}</p>
-              </Reveal>
-            ))}
-          </div>
+          {/* Numbered off a datum, the way the listing sheet and the roster
+              both hang their content from a rule — and dealt out of the first
+              column as the row arrives. See components/ServiceDeck.tsx. */}
+          <ServiceDeck items={services} />
         </div>
-      </section>
-
-      {/* ---------- On the record: press ---------- */}
-      <section className="container-edge py-20 md:py-28">
-        <Reveal className="grid gap-10 md:grid-cols-[minmax(0,20rem)_minmax(0,1fr)] md:gap-16">
-          <div>
-            <p className="label">On the record</p>
-            {/* Balanced: at this column width the last word otherwise drops to
-                a line of its own. */}
-            <h2 className="display mt-4 text-balance text-4xl text-ink sm:text-5xl">
-              Where she turns up
-            </h2>
-            <p className="mt-6 max-w-sm leading-relaxed text-ink-soft">
-              Set as type rather than as a wall of borrowed logos — no mark on
-              this page belongs to anyone but Ritchey Realty.
-            </p>
-          </div>
-
-          {/* The closing rule is the list's own bottom border rather than an
-              empty trailing <li>, which would put a contentless item in the
-              accessibility tree just to draw a line. */}
-          <ul className="border-b border-ink/15 md:pt-3">
-            {press.map((p) => (
-              // Each row steps right under the pointer, the way a line being
-              // read is followed with a finger. Nothing here is a link — there
-              // is no clipping to link to — so the cue stops at the type.
-              <li key={p.outlet} className="group border-t border-ink/15">
-                <div className="flex flex-wrap items-baseline justify-between gap-x-8 gap-y-1 py-5">
-                  <span className="display-sm text-xl text-ink transition-transform duration-300 ease-out group-hover:translate-x-2 motion-reduce:group-hover:translate-x-0 sm:text-2xl">
-                    {p.outlet}
-                  </span>
-                  <span className="font-mono text-[10px] uppercase tracking-widest text-ink-muted transition-colors duration-300 group-hover:text-brass-deep">
-                    {p.kind}
-                  </span>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </Reveal>
       </section>
 
       {/* ---------- Where she works: the homepage's own line, reused ---------- */}
       <section>
-        <div className="container-edge pb-12">
+        <div className="container-edge pb-12 pt-20 md:pt-24">
           <Reveal className="max-w-2xl">
             <p className="label">Where she works</p>
             <h2 className="display mt-4 text-4xl text-ink sm:text-5xl">
@@ -498,23 +510,40 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* ---------- Common questions ---------- */}
-      <section className="container-edge py-20 md:py-28">
-        <Reveal className="max-w-2xl">
-          <p className="label">Common questions</p>
-          <h2 className="display mt-4 text-4xl text-ink sm:text-5xl">
-            The things people ask first
-          </h2>
-          <p className="mt-6 max-w-lg leading-relaxed text-ink-soft">
-            Eight answers, each one checkable against something published. What
-            isn&apos;t here — commission, timelines, whether a particular house
-            is worth it — is worth a conversation rather than a paragraph.
-          </p>
-        </Reveal>
+      {/* ---------- Common questions ----------
 
-        <Reveal className="mt-12" delay={80}>
-          <Faq items={faqs} />
-        </Reveal>
+          Head in a rail, questions beside it, rather than the head stacked on
+          top of a list capped at its own measure — which left the right half of
+          the section empty for the length of eight questions.
+
+          The rail is sticky. Eight rows is more than a screen once a few are
+          open, and a heading that scrolls away takes the section's context with
+          it; pinned, "what isn't here is worth a conversation" and the way to
+          start one stay next to the answers the whole way down. Sticky works
+          here because the root uses `overflow-x: clip` rather than `hidden` —
+          see the note in globals.css, which was written for exactly this. */}
+      <section className="container-edge py-20 md:py-28">
+        <div className="grid gap-12 md:grid-cols-[minmax(0,21rem)_minmax(0,1fr)] md:gap-16 lg:gap-24">
+          <Reveal className="md:sticky md:top-28 md:self-start">
+            <p className="label">Common questions</p>
+            <h2 className="display mt-4 text-4xl text-ink">
+              The things people ask first
+            </h2>
+            <p className="mt-6 leading-relaxed text-ink-soft">
+              Eight answers, each one checkable against something published.
+              What isn&apos;t here — commission, timelines, whether a particular
+              house is worth it — is worth a conversation rather than a
+              paragraph.
+            </p>
+            <Link href="/contact" className="btn-line mt-8">
+              Ask something else
+            </Link>
+          </Reveal>
+
+          <Reveal delay={80}>
+            <Faq items={faqs} />
+          </Reveal>
+        </div>
       </section>
 
       {/* ---------- Book a meeting — runs straight into the footer ---------- */}

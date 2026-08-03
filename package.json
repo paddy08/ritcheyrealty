@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "landmarks": "node build-landmarks.mjs",
+    "about-hero": "node encode-about-hero.mjs",
     "optimize": "node optimize-images.mjs"
   },
   "dependencies": {

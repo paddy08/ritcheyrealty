@@ -21,7 +21,10 @@ import type { Faq as FaqItem } from "@/lib/site";
  */
 export function Faq({ items }: { items: FaqItem[] }) {
   return (
-    <div className="max-w-3xl">
+    // No measure cap here any more: the column this sits in is what sets the
+    // width, and capping it again only re-created the empty half it was moved
+    // out of.
+    <div>
       {items.map((item) => (
         <div key={item.q}>
           <div className="datum" />

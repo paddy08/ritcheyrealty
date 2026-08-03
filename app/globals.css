@@ -100,11 +100,62 @@
     @apply h-px w-full bg-limestone/20;
   }
 
-  /* Crop marks. Four brass corners set just outside a plate, the way a printer
-     marks the trim on a sheet. Used on the About portrait to make it read as a
-     plate laid on the survey rather than as a headshot dropped into a page. */
-  .crop-mark {
-    @apply pointer-events-none absolute h-4 w-4 border-brass-deep/50;
+  /* The About portrait: a photograph with no edge.
+   *
+   * Everywhere else on this site a photo is a `plate` — a hard rectangle with
+   * an ink hairline, a print laid on paper. That is right for a house, which
+   * genuinely is a rectangular print in a listing sheet. It is wrong for the
+   * one portrait the page is built around, where the box was the loudest thing
+   * in the hero and the photograph's own background (a lamp, a door, a console
+   * table) was competing with the type for the same corner.
+   *
+   * So the image is masked instead: opaque through the middle, falling to
+   * nothing before it reaches any edge, which leaves her on the limestone
+   * rather than in a window cut into it. The filter is the second half of the
+   * job — the photograph is a cool-white interior and the paper is warm, so a
+   * little saturation comes out and a little warmth goes in until the two sit
+   * in the same light.
+   *
+   * Radial rather than a linear fade on one side: a straight soft edge still
+   * reads as an edge. */
+  .portrait-splash {
+    -webkit-mask-image: radial-gradient(
+      78% 70% at 50% 42%,
+      #000 44%,
+      rgba(0, 0, 0, 0.9) 62%,
+      rgba(0, 0, 0, 0.4) 81%,
+      transparent 100%
+    );
+    mask-image: radial-gradient(
+      78% 70% at 50% 42%,
+      #000 44%,
+      rgba(0, 0, 0, 0.9) 62%,
+      rgba(0, 0, 0, 0.4) 81%,
+      transparent 100%
+    );
+    filter: saturate(0.84) contrast(1.02) sepia(0.1);
+  }
+
+  /* The sheet's graticule: the faint ruled grid a survey is drawn on.
+   *
+   * Two hairline gradients at ~5% ink, then masked so it is strongest behind
+   * the type and gone before it reaches the edges — a sheet that was ruled
+   * once, not a table. Costs nothing: no image, no request, no bytes on a
+   * budget this project has already fought for. */
+  .survey-grid {
+    background-image: linear-gradient(
+        to right,
+        rgba(27, 36, 55, 0.05) 1px,
+        transparent 1px
+      ),
+      linear-gradient(to bottom, rgba(27, 36, 55, 0.05) 1px, transparent 1px);
+    background-size: 5.5rem 5.5rem;
+    -webkit-mask-image: radial-gradient(
+      100% 80% at 45% 45%,
+      #000 25%,
+      transparent 80%
+    );
+    mask-image: radial-gradient(100% 80% at 45% 45%, #000 25%, transparent 80%);
   }
 
   /* An initial in the display face, sunk two lines into the paragraph. Caslon
@@ -208,6 +259,64 @@ html[data-js] .reveal-slow[data-shown="false"] {
 }
 html[data-js] .reveal-tick[data-shown="false"] {
   transform: scaleY(0);
+}
+
+/* ---- The service deck: three cards dealt out of the first.
+ *
+ * All three start stacked on column one and slide right into their own columns
+ * as the row comes into view, second then third. It is the roster cascade's
+ * idea — the same left-to-right stagger, the same one-observer-many-delays
+ * mechanism — carried further, because these are three cards rather than five
+ * and there is room for them to actually travel.
+ *
+ * The distance is expressed in the cards' own width: the columns are equal, so
+ * one column across is exactly `100%` of a card plus one gap. That means the
+ * offsets cannot drift out of step with the grid the way hard-coded pixels
+ * would. The gap is a custom property set on the container for the same reason.
+ *
+ * Only from md up, where the grid is three columns. Below that the cards are
+ * already stacked vertically and sliding them sideways would be describing a
+ * layout that isn't on screen, so they take the plain rise instead. ---- */
+.deck {
+  --deck-gap: 2.5rem;
+}
+
+.deal {
+  transition: transform 760ms cubic-bezier(0.22, 0.61, 0.36, 1),
+    opacity 520ms ease-out;
+}
+
+html[data-js] .deal[data-shown="false"] {
+  opacity: 0;
+  transform: translateY(0.75rem);
+}
+
+@media (min-width: 768px) {
+  html[data-js] .deal[data-shown="false"] {
+    transform: none;
+  }
+  html[data-js] .deal[data-shown="false"][data-deal="1"] {
+    transform: translateX(calc(-100% - var(--deck-gap))) scale(0.96);
+  }
+  html[data-js] .deal[data-shown="false"][data-deal="2"] {
+    transform: translateX(calc(-200% - var(--deck-gap) * 2)) scale(0.94);
+  }
+}
+
+/* Reduced motion keeps the arrival and drops the travel, as everywhere else on
+ * this page. !important twice over: once to outrank the blanket duration reset
+ * in the base layer, once to outrank the translate rules above. */
+@media (prefers-reduced-motion: reduce) {
+  .deal {
+    transition-property: opacity !important;
+    transition-duration: 320ms !important;
+  }
+  html[data-js] .deal[data-shown="false"],
+  html[data-js] .deal[data-shown="false"][data-deal="1"],
+  html[data-js] .deal[data-shown="false"][data-deal="2"] {
+    opacity: 0;
+    transform: none !important;
+  }
 }
 
 /* Reduced motion keeps the reveal, minus the motion.
@@ -325,6 +434,23 @@ html[data-js] .plate-clip img {
    LCP candidate, the fade is traded away and the travel kept. */
 .animate-rise-solid {
   animation: rise-solid 700ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+/* The masked portrait settling back from a slight over-scale — the print
+   being laid down, minus the plate that used to be laid down with it.
+   Scale only, no opacity, for the same reason rise-solid exists: this image
+   is the About page's largest paint and a fade would disqualify it. */
+@keyframes settle {
+  from {
+    transform: scale(1.05);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+.animate-settle {
+  animation: settle 1200ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
 }
 
 .animate-draw {
