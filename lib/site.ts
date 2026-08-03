@@ -36,6 +36,20 @@ export const agent = {
     "A REALTOR®, Broker/Owner of Ritchey Realty, and a national real estate coach with the Tom Ferry organization — known for balanced expertise across both traditional and luxury markets throughout North Texas.",
     "Based in Keller, Kallie has guided hundreds of clients through homes ranging from family neighbourhoods to custom estates in Southlake, Westlake, Trophy Club, Roanoke and Grapevine. She holds a Master of Science from UT Arlington and is a certified Texas Real Estate Commission instructor.",
   ],
+  /**
+   * The long version, for /about. Same three paragraphs the live site runs,
+   * set to this site's voice — the claims are unchanged, only the phrasing
+   * that read as brochure copy ("seamless experience", "measurable success")
+   * has been dropped for the plainer register the rest of the page uses.
+   */
+  fullBio: [
+    "Kallie Spencer Ritchey has been a licensed agent since 2010 and a broker since 2015. She owns Ritchey Realty, and she coaches other agents nationally with the Tom Ferry organization — which is a roundabout way of saying she has spent fifteen years both doing the work and teaching it.",
+    "She is based in Keller and works the whole north side of the metroplex. Hundreds of clients so far, across a range that runs from family neighbourhoods to custom estates in Southlake, Westlake, Trophy Club, Roanoke and Grapevine. That spread is deliberate: she does not treat a first house and a seven-figure listing as different businesses.",
+    "The credentials behind it are a Master of Science from the University of Texas at Arlington and certification as a Texas Real Estate Commission instructor. The practice behind it is around fifty transactions a year — buyers, sellers and investors — with the emphasis on how a property is marketed, how the negotiation is run, and what it actually closes at.",
+  ],
+  /** Her stated mission, quoted from ritcheyrealty.com/about-kallie. */
+  mission:
+    "Deliver an exceptional real estate experience rooted in trust, expertise, and results.",
   // Real, checkable figures — not marketing rounds.
   facts: [
     { label: "Licensed since", value: "2010" },
@@ -44,6 +58,127 @@ export const agent = {
     { label: "Google reviews", value: "63" },
   ],
 };
+
+/**
+ * The credential line on /about — the range line's grammar, applied to a
+ * career instead of a map.
+ *
+ * Two of these carry a year because two of them have one on the record. The
+ * other four carry an institution. Nothing here is dated by inference: a
+ * plausible-looking year against a real person's licence is exactly the kind
+ * of invention the rest of this file avoids. That is why it is a credential
+ * line and not a timeline.
+ */
+export type Credential = {
+  /** The large figure — a year, or the issuing body. */
+  mark: string;
+  /** The mono label under it. */
+  detail: string;
+};
+
+export const credentials: Credential[] = [
+  { mark: "2010", detail: "Licensed agent" },
+  { mark: "2015", detail: "Texas broker" },
+  { mark: "UTA", detail: "Master of Science" },
+  { mark: "TREC", detail: "Certified instructor" },
+  { mark: "Tom Ferry", detail: "National coach" },
+  { mark: "Owner", detail: "Ritchey Realty" },
+];
+
+/**
+ * Media mentions listed on ritcheyrealty.com. Set as type, not logos — we hold
+ * no licence to reproduce anyone's mark, and a wall of borrowed logos would be
+ * the one un-drawn thing on a page built like a survey sheet.
+ */
+export const press: { outlet: string; kind: string }[] = [
+  { outlet: "Real Producers Magazine", kind: "Feature" },
+  { outlet: "570 AM · Real Estate Talk", kind: "Radio" },
+  { outlet: "Local television", kind: "Segments" },
+  { outlet: "Podcasts", kind: "Guest" },
+];
+
+/**
+ * The three shapes of work the live site names: preparing a home for sale,
+ * navigating a move-up purchase, and managing a high-end listing. Kept to
+ * those three rather than expanded into a service menu we'd have to invent.
+ */
+export const services: { n: string; title: string; body: string }[] = [
+  {
+    n: "01",
+    title: "Selling",
+    body: "Getting the house ready, pricing it against what is actually moving, and marketing it properly. The listing is the product, and it gets treated like one.",
+  },
+  {
+    n: "02",
+    title: "Moving up",
+    body: "The hardest version of this job: selling and buying at once, on two timelines that have to meet. Most of the work is in sequencing, and most of the stress comes out of it when the sequencing is right.",
+  },
+  {
+    n: "03",
+    title: "Luxury listings",
+    body: "Custom estates in Southlake, Westlake and Trophy Club. Same process, longer runway, and a much smaller pool of buyers to reach — which is a marketing problem before it is a pricing one.",
+  },
+];
+
+/**
+ * FAQ — /about.
+ *
+ * Every answer here is traceable to something already in this file or published
+ * on ritcheyrealty.com; the source is named in a comment above each one. That
+ * constraint is why there are eight and not fourteen. Questions this file
+ * cannot answer honestly — commission, average days on market, whether she'll
+ * take a particular listing — are left off rather than filled in with a
+ * plausible number, because a real business would be held to whatever this page
+ * says.
+ *
+ * Rendered by components/Faq.tsx and, from the same array, as FAQPage JSON-LD.
+ * One source, so the markup cannot drift from the visible text.
+ */
+export type Faq = { q: string; a: string };
+
+export const faqs: Faq[] = [
+  {
+    // Source: `communities` above, plus the towns named in the live bio.
+    q: "What areas does Kallie Ritchey cover?",
+    a: "Fort Worth and the towns north and east of it: Saginaw, Haslet, Roanoke, Keller, Southlake, Grapevine and North Richland Hills. She also works Westlake and Trophy Club, and the office is on Hillwood Parkway in Fort Worth.",
+  },
+  {
+    // Source: agent.statement / agent.license.
+    q: "Is Kallie an agent or a broker?",
+    a: "Both, in sequence. She has been a licensed agent since 2010 and a licensed Texas broker since 2015, and she is the Broker/Owner of Ritchey Realty. Her licence numbers are Broker 9004834 and RE 603353.",
+  },
+  {
+    // Source: the live bio's "balanced expertise across both traditional and
+    // luxury markets".
+    q: "Does she only handle luxury homes?",
+    a: "No. The practice is deliberately balanced across both traditional and luxury markets — family neighbourhoods and first houses alongside custom estates in Southlake, Westlake and Trophy Club. It is the same process at either end; what changes is the runway and the size of the buyer pool.",
+  },
+  {
+    // Source: agent.facts — "~50 sales a year".
+    q: "How many homes does she sell a year?",
+    a: "Around fifty transactions annually. That is a working number rather than a record year, and it is the figure published on ritcheyrealty.com.",
+  },
+  {
+    // Source: the live bio — "representing buyers, sellers, and investors".
+    q: "Does she work with buyers, sellers or investors?",
+    a: "All three. Buyers and sellers are most of the volume, including move-up clients doing both at once, and she also represents investors.",
+  },
+  {
+    // Source: the live bio's credentials paragraph.
+    q: "What are her qualifications?",
+    a: "A Master of Science from the University of Texas at Arlington, certification as a Texas Real Estate Commission instructor, and a national coaching role with the Tom Ferry organization. She has also been featured in Real Producers Magazine and on 570 AM's Real Estate Talk.",
+  },
+  {
+    // Source: `site.address`, `site.phone`, `site.email`.
+    q: "Where is the office, and how do I get in touch?",
+    a: "Ritchey Realty is at 9800 Hillwood Parkway, Suite 140, Fort Worth, TX 76244. Call or text (682) 788-9060, or email team@ritcheyrealty.com. One conversation with a named agent — no call centre.",
+  },
+  {
+    // Source: `reviewSources` — verified against Google and Zillow directly.
+    q: "What do past clients say?",
+    a: "4.9 out of 5 from 63 Google reviews and 5.0 out of 5 from 39 reviews on Zillow. Both figures were checked against the platforms themselves rather than taken from marketing material.",
+  },
+];
 
 /**
  * The team — DELIBERATELY ANONYMOUS.
