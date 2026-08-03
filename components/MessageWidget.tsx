@@ -1,6 +1,17 @@
 "use client";
 
-import { forwardRef, useCallback, useEffect, useId, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
+import {
+  createContext,
+  forwardRef,
+  useCallback,
+  useContext,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { site } from "@/lib/site";
 
 /**
@@ -69,8 +80,83 @@ function validate(values: Record<Field, string>) {
 
 type Stage = "closed" | "prompt" | "form";
 
-export function MessageWidget() {
+/**
+ * Routes that never auto-open the form.
+ *
+ * Both of these already end in a contact section with the phone number, the
+ * email and the office on it, so the interruption buys nothing it isn't
+ * already offering — and on /about, 40% of the way down lands in the middle of
+ * the bio or the FAQ, which is someone reading rather than someone stuck.
+ * Interrupting a reader to ask whether they need help is how a helper turns
+ * into a nuisance, which is the same reasoning as `autoOpenSpent` below.
+ *
+ * The docked button stays on every route. This suppresses the ambush, not the
+ * widget.
+ */
+const NO_AUTO_OPEN = ["/about", "/contact"];
+
+/**
+ * Which stage the form is at, hoisted out of the widget.
+ *
+ * The widget is the last thing in the layout, but the things that open it —
+ * the "Send a message" button ending the home and about pages — are rendered
+ * above it, so they cannot reach its state directly. The stage lives here
+ * instead and both sides read it.
+ *
+ * Only the stage is lifted. The field values, errors and submitted flag stay
+ * inside the widget: nothing outside it has any business with a half-typed
+ * form, and a provider re-render on every keystroke is worth avoiding.
+ */
+type MessageForm = {
+  stage: Stage;
+  setStage: React.Dispatch<React.SetStateAction<Stage>>;
+  /** Open the form. Pass the element that opened it so focus can go back. */
+  openForm: (trigger?: HTMLElement | null) => void;
+  /** Whatever opened it, or null when that was the docked button. */
+  triggerRef: React.MutableRefObject<HTMLElement | null>;
+};
+
+const MessageFormContext = createContext<MessageForm | null>(null);
+
+/**
+ * Wraps the whole layout so anything on the page can open the form.
+ *
+ * `children` is a prop rather than JSX built in here, so the page tree is
+ * already-created elements by the time this renders. Opening the form changes
+ * `stage` and re-renders the provider, but React bails out on children whose
+ * element reference hasn't changed — the page itself does not re-render.
+ */
+export function MessageProvider({ children }: { children: React.ReactNode }) {
   const [stage, setStage] = useState<Stage>("closed");
+  const triggerRef = useRef<HTMLElement | null>(null);
+
+  const openForm = useCallback((trigger?: HTMLElement | null) => {
+    triggerRef.current = trigger ?? null;
+    setStage("form");
+  }, []);
+
+  const value = useMemo(
+    () => ({ stage, setStage, openForm, triggerRef }),
+    [stage, openForm]
+  );
+
+  return (
+    <MessageFormContext.Provider value={value}>
+      {children}
+    </MessageFormContext.Provider>
+  );
+}
+
+export function useMessageForm() {
+  const ctx = useContext(MessageFormContext);
+  if (!ctx) {
+    throw new Error("useMessageForm must be used inside <MessageProvider>.");
+  }
+  return ctx;
+}
+
+export function MessageWidget() {
+  const { stage, setStage, openForm, triggerRef } = useMessageForm();
   const open = stage !== "closed";
   const [values, setValues] = useState<Record<Field, string>>(EMPTY);
   const [errors, setErrors] = useState<Partial<Record<Field, string>>>({});
@@ -80,6 +166,7 @@ export function MessageWidget() {
   const openerRef = useRef<HTMLButtonElement>(null);
   const uid = useId();
   const fid = (name: string) => `${uid}-${name}`;
+  const pathname = usePathname();
 
   // Set once the form has shown itself, and never unset. Being dismissed is an
   // answer; asking again is how a helper turns into a nuisance.
@@ -88,17 +175,26 @@ export function MessageWidget() {
   const close = useCallback(() => {
     autoOpenSpent.current = true;
     setStage("closed");
-    openerRef.current?.focus({ preventScroll: true });
-  }, []);
+    // Focus goes back to whatever opened this — the "Send a message" button at
+    // the end of the page if that was it, the dock otherwise. Handing it back
+    // to the dock regardless would silently jump the reader to the corner of
+    // the screen from wherever they actually were.
+    const restoreTo = triggerRef.current ?? openerRef.current;
+    triggerRef.current = null;
+    restoreTo?.focus({ preventScroll: true });
+  }, [setStage, triggerRef]);
 
   /**
    * Open once the reader is more than 40% of the way down.
    *
    * Measured against the distance actually scrollable rather than the document
    * height, so it means "40% of the way through" on any screen instead of
-   * firing at a fixed pixel depth. A page too short to scroll never triggers.
+   * firing at a fixed pixel depth. A page too short to scroll never triggers,
+   * and neither does a route in NO_AUTO_OPEN.
    */
   useEffect(() => {
+    if (NO_AUTO_OPEN.includes(pathname)) return;
+
     const onScroll = () => {
       if (autoOpenSpent.current) return;
       const scrollable =
@@ -117,7 +213,7 @@ export function MessageWidget() {
     window.addEventListener("scroll", onScroll, { passive: true });
     onScroll(); // in case the browser restored a mid-page scroll position
     return () => window.removeEventListener("scroll", onScroll);
-  }, []);
+  }, [pathname]);
 
   useEffect(() => {
     if (!open) return;
@@ -197,7 +293,7 @@ export function MessageWidget() {
       <button
         ref={openerRef}
         type="button"
-        onClick={() => setStage("form")}
+        onClick={() => openForm(null)}
         aria-expanded={open}
         aria-haspopup="dialog"
         className={`fixed bottom-5 right-5 z-[60] flex items-center gap-2.5 rounded-[3px] bg-ink px-5 py-3.5 font-mono text-[12px] uppercase tracking-widest text-limestone-pale shadow-[0_10px_30px_rgba(27,36,55,0.35)] transition-opacity duration-200 hover:bg-ink-soft sm:bottom-7 sm:right-7 ${

@@ -4,7 +4,7 @@ import "./globals.css";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { HydrationMark } from "@/components/HydrationMark";
-import { MessageWidget } from "@/components/MessageWidget";
+import { MessageProvider, MessageWidget } from "@/components/MessageWidget";
 
 // Three roles, self-hosted via next/font — no render-blocking external requests.
 //
@@ -107,10 +107,14 @@ export default function RootLayout({
       </head>
       <body className="min-h-screen antialiased">
         <HydrationMark />
-        <Header />
-        <main>{children}</main>
-        <Footer />
-        <MessageWidget />
+        {/* Wraps the page so the "Send a message" buttons that end the home
+            and about pages can reach the widget rendered below them. */}
+        <MessageProvider>
+          <Header />
+          <main>{children}</main>
+          <Footer />
+          <MessageWidget />
+        </MessageProvider>
       </body>
     </html>
   );

@@ -3,6 +3,7 @@ import { AgentIntro } from "@/components/AgentIntro";
 import { FeaturedListings } from "@/components/FeaturedListings";
 import { HeroBackdrop } from "@/components/HeroBackdrop";
 import { HeroSearch } from "@/components/HeroSearch";
+import { MessageTrigger } from "@/components/MessageTrigger";
 import { NeighborhoodMap } from "@/components/NeighborhoodMap";
 import { Reveal } from "@/components/Reveal";
 import { ReviewScores, Testimonials } from "@/components/Testimonials";
@@ -187,9 +188,9 @@ export default function HomePage() {
               </dl>
 
               <div className="mt-10 flex flex-wrap gap-4">
-                <Link href="/contact" className="btn-brass">
+                <MessageTrigger className="btn-brass">
                   Send a message
-                </Link>
+                </MessageTrigger>
                 <Link
                   href="/search"
                   className="btn border border-limestone/25 text-limestone hover:bg-limestone-pale hover:text-ink"
