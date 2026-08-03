@@ -136,7 +136,10 @@ export function FeaturedListings({ listings }: { listings: Listing[] }) {
             >
               <ListingCard
                 listing={listing}
-                priority={i === 0}
+                // Not priority: the rail is below the fold on every viewport,
+                // and marking the first card priority preloaded 73KB in front
+                // of the header logo, which is the element LCP settles on.
+                priority={false}
                 muted={slot !== 0}
                 focusable={onStage}
               />

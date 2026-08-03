@@ -40,14 +40,17 @@ export default function HomePage() {
               was room to spare. The measure below is what governs wrapping now,
               so the phrase stays whole wherever it fits. */}
           <h1 className="display mx-auto mt-6 max-w-4xl text-[3.25rem] text-limestone-pale sm:text-7xl lg:text-[5rem]">
+            {/* rise-solid, not rise: this headline is the page's largest
+                contentful paint, and a fade from opacity 0 disqualifies it
+                permanently. See app/globals.css. */}
             <span
-              className="animate-rise block text-brass-pale"
+              className="animate-rise-solid block text-brass-pale"
               style={{ animationDelay: "120ms" }}
             >
               You&apos;ll know it
             </span>
             <span
-              className="animate-rise block"
+              className="animate-rise-solid block"
               style={{ animationDelay: "230ms" }}
             >
               the moment you walk in.

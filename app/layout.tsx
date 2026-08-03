@@ -26,11 +26,18 @@ const archivo = Archivo({
 });
 
 // Utility: DM Mono — labels, coordinates, and property data.
+//
+// preload: false because these three faces are ~26KB of the ~77KB of font the
+// page was preloading at high priority, and none of it sets a word larger than
+// a 10px label. That bandwidth competes on a phone link with the display face,
+// which is what the hero headline — the largest contentful paint — is set in.
+// Mono still loads; it just stops queue-jumping the type that gets measured.
 const dmMono = DM_Mono({
   subsets: ["latin"],
   display: "swap",
   variable: "--font-mono",
   weight: ["300", "400", "500"],
+  preload: false,
 });
 
 export const metadata: Metadata = {

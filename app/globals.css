@@ -271,6 +271,29 @@ html[data-js] .plate-clip img {
   }
 }
 
+/* The headline rises, but does not fade.
+ *
+ * Chrome will not accept an element as a largest-contentful-paint candidate if
+ * it first painted at opacity 0, and it does not reconsider once the fade has
+ * finished — the disqualification lasts the life of the page. So the hero
+ * headline, by a wide margin the largest thing on the first screen, ruled
+ * itself out, and LCP fell through to the 64px header logo in the bar above
+ * it: a much later paint, and not what a visitor would call the main content.
+ *
+ * Same travel, same easing, same delays. Losing the fade is what buys the
+ * headline the right to be measured as what it visibly is. Note this cannot
+ * be solved by making the hero photograph the candidate instead — an image
+ * that fills the viewport is treated as a background and is never eligible.
+ */
+@keyframes rise-solid {
+  from {
+    transform: translateY(0.7em);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
 @keyframes station-in {
   from {
     opacity: 0;
@@ -296,6 +319,12 @@ html[data-js] .plate-clip img {
 
 .animate-rise {
   animation: rise 700ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+/* See the rise-solid keyframes above: for the one element that has to be the
+   LCP candidate, the fade is traded away and the travel kept. */
+.animate-rise-solid {
+  animation: rise-solid 700ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
 }
 
 .animate-draw {

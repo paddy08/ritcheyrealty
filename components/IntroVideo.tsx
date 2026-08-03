@@ -56,6 +56,12 @@ export function IntroVideo() {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={still}
+            // Lazy because this plate sits well below the fold. Eager, it was
+            // preloaded alongside the header logo — which is what LCP actually
+            // resolves to on this page — and 100KB of it competed for a slow
+            // link before anything above the fold had finished.
+            loading="lazy"
+            decoding="async"
             onError={(e) => {
               const img = e.currentTarget;
               if (!img.dataset.fallback) {
