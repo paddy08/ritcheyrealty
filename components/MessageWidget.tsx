@@ -83,17 +83,20 @@ type Stage = "closed" | "prompt" | "form";
 /**
  * Routes that never auto-open the form.
  *
- * Both of these already end in a contact section with the phone number, the
+ * All three already end in a contact section with the phone number, the
  * email and the office on it, so the interruption buys nothing it isn't
  * already offering — and on /about, 40% of the way down lands in the middle of
- * the bio or the FAQ, which is someone reading rather than someone stuck.
+ * the bio or the FAQ, which is someone reading rather than someone stuck. The
+ * Fort Worth guide is the same case at greater length: 40% down is the middle
+ * of the neighbourhood index, and the person there is doing exactly what the
+ * page was written for.
  * Interrupting a reader to ask whether they need help is how a helper turns
  * into a nuisance, which is the same reasoning as `autoOpenSpent` below.
  *
  * The docked button stays on every route. This suppresses the ambush, not the
  * widget.
  */
-const NO_AUTO_OPEN = ["/about", "/contact"];
+const NO_AUTO_OPEN = ["/about", "/contact", "/communities/fort-worth"];
 
 /**
  * Which stage the form is at, hoisted out of the widget.

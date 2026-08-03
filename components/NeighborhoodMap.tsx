@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { communities, formatCoords, stations } from "@/lib/site";
+import { communities, communityHref, formatCoords, stations } from "@/lib/site";
 import type { Community } from "@/lib/site";
 
 const MAP_SRC = "/neighborhood-map-3d.webp";
@@ -91,8 +91,10 @@ function Readout({
       <p className="mt-3 text-sm leading-relaxed text-ink-soft">
         {community.blurb}
       </p>
+      {/* Straight to the town's own page where one exists, and to the
+          communities index where it doesn't. See communityHref in lib/site.ts. */}
       <Link
-        href="/communities"
+        href={communityHref(community.name)}
         className="mt-6 inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-widest text-ink transition-colors hover:text-brass-deep"
       >
         Explore {community.name}
@@ -227,7 +229,10 @@ function PopOut({
             <p className="mt-3 text-sm leading-relaxed text-ink-soft">
               {community.blurb}
             </p>
-            <Link href="/communities" className="btn-solid mt-6 w-full">
+            <Link
+              href={communityHref(community.name)}
+              className="btn-solid mt-6 w-full"
+            >
               Explore {community.name}
             </Link>
           </div>

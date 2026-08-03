@@ -399,6 +399,22 @@ export const communities: Community[] = [
   },
 ];
 
+/**
+ * Where a town's own page lives.
+ *
+ * A map rather than a slug function, because a slug function would happily
+ * produce /communities/haslet — a URL this static export does not contain. A
+ * town with no page falls back to the communities index, which is a real page
+ * that says what is coming.
+ */
+export const communityPages: Record<string, string> = {
+  "Fort Worth": "/communities/fort-worth",
+};
+
+export function communityHref(name: string) {
+  return communityPages[name] ?? "/communities";
+}
+
 // The range line reads left-to-right as you'd drive it: west to east. Ordering
 // by longitude is the information the line carries, so it's derived, not typed.
 export const stations: Community[] = [...communities].sort(

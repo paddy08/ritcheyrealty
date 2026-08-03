@@ -6,6 +6,20 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { nav } from "@/lib/site";
 
+/**
+ * Routes whose hero is a dark, full-bleed field.
+ *
+ * On these the bar can sit on the artwork with light type, the way it does over
+ * the home hero. Everywhere else the hero is limestone paper and the bar has to
+ * be solid, or light type would sit on light paper.
+ *
+ * A set rather than a prop because the header renders above the page in the
+ * layout and has no other way to know what it is sitting on. Add a route here
+ * when you give it a dark hero — the alternative, a solid limestone bar butted
+ * against the top of a photograph, is the seam /about was redesigned to avoid.
+ */
+const DARK_HERO_ROUTES = new Set(["/", "/communities/fort-worth"]);
+
 export function Header() {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -18,11 +32,16 @@ export function Header() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // Over the home hero the bar is transparent with light type; once scrolled it
+  // Over a dark hero the bar is transparent with light type; once scrolled it
   // becomes a solid limestone bar with ink type. Matte in both states — no
-  // frosted glass anywhere on this site. Non-home routes and the open mobile
-  // panel force the solid state so type stays legible without a dark hero.
-  const solid = scrolled || open || pathname !== "/";
+  // frosted glass anywhere on this site. Routes with a paper hero and the open
+  // mobile panel force the solid state so type stays legible.
+  //
+  // Trailing slash tolerated: the static export can be served either way
+  // depending on the host, and a bar that turned solid only on
+  // /communities/fort-worth/ would be a very confusing bug to chase.
+  const route = pathname.length > 1 ? pathname.replace(/\/$/, "") : pathname;
+  const solid = scrolled || open || !DARK_HERO_ROUTES.has(route);
 
   return (
     <header className="fixed inset-x-0 top-0 z-50">

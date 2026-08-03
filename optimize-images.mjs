@@ -31,6 +31,18 @@ const TARGETS = [
   { file: "public/listings/l2.webp" },
   { file: "public/listings/l3.webp" },
   { file: "public/listings/l4.webp" },
+  // The Fort Worth guide's imagery. Encoded by encode-fort-worth.mjs, which
+  // sets the dimensions; this pass only re-tests the quality at those
+  // dimensions, from the originals in media/ where they exist. The hero pair is
+  // deliberately absent: both are enlargements of a 740px source and are
+  // sharpened on the way out, so re-encoding them from source here — without
+  // that sharpen — would quietly hand back a softer file that measured well.
+  { file: "public/fort-worth-sundance.webp", src: "media/sudance-square-plaza.png" },
+  { file: "public/fort-worth-sundance-mobile.webp", src: "media/sudance-square-plaza.png" },
+  { file: "public/fort-worth-neighborhood.webp", src: "media/neighbourhood.jpg" },
+  { file: "public/fort-worth-neighborhood-mobile.webp", src: "media/neighbourhood.jpg" },
+  { file: "public/fort-worth-stockyards.webp", src: "media/stockyard-station.png" },
+  { file: "public/fort-worth-stockyards-mobile.webp", src: "media/stockyard-station.png" },
   { file: "public/landmarks/fort-worth.webp" },
   { file: "public/landmarks/saginaw.webp" },
   { file: "public/landmarks/north-richland-hills.webp" },
