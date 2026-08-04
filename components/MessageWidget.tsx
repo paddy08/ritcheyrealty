@@ -1,87 +1,29 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import {
-  createContext,
-  forwardRef,
-  useCallback,
-  useContext,
-  useEffect,
-  useId,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { site } from "@/lib/site";
 
 /**
- * The message widget: a docked button that opens the enquiry form.
+ * The call widget: a round phone button that opens a card offering the number.
  *
- * Deliberately not a chat. A chat bubble promises someone is on the other end
- * right now, and nobody is.
+ * Deliberately not a chat, and no longer a form either. It used to open the
+ * six-field enquiry form in a centred modal — a scrim, a locked page and an
+ * inner scrollbar, all to ask a question the phone number answers in one line.
+ * That form now lives on /contact, where it has a column to itself, and the
+ * widget does the one thing a floating button is good for: hand over the number
+ * without taking the screen.
  *
- * It opens in the middle of the screen rather than docked in a corner. Six
- * fields and a consent notice do not fit a corner card at any size — that
- * version needed an inner scrollbar on desktop and was unreadable on a phone.
- * Centred, the whole form is on screen at once and nothing scrolls.
- *
- * NOTHING IS SENT. This is a demo build with no backend — `output: "export"`
- * in next.config.mjs — so submitting validates the form and then says so
- * outright. No network request, no mailto, nothing stored. See `submit`.
+ * So it opens where it is, above the button in the corner, rather than in the
+ * middle of the viewport. Nothing behind it is covered or frozen, and whatever
+ * the reader was looking at when it appeared is still there.
  */
 
-type Field =
-  | "firstName"
-  | "lastName"
-  | "email"
-  | "phone"
-  | "subject"
-  | "message";
-
-const EMPTY: Record<Field, string> = {
-  firstName: "",
-  lastName: "",
-  email: "",
-  phone: "",
-  subject: "",
-  message: "",
-};
-
-/** Fraction of the scrollable distance that brings the form up by itself. */
+/** Fraction of the scrollable distance that brings the card up by itself. */
 const OPEN_AT = 0.4;
 
-/** Digits in, (817) 555-0142 out. Formats as far as the digits go. */
-function formatPhone(raw: string) {
-  const d = raw.replace(/\D/g, "").slice(0, 10);
-  if (d.length <= 3) return d;
-  if (d.length <= 6) return `(${d.slice(0, 3)}) ${d.slice(3)}`;
-  return `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`;
-}
-
 /**
- * Validation is deliberately shallow: presence, and an address that could
- * plausibly route. Anything stricter — regex gauntlets for "real" addresses,
- * insisting on a phone number — turns away people who typed something
- * perfectly usable, and a rejected enquiry is worse than a slightly messy one.
- */
-function validate(values: Record<Field, string>) {
-  const errors: Partial<Record<Field, string>> = {};
-  if (!values.firstName.trim()) errors.firstName = "Please add your first name.";
-  if (!values.lastName.trim()) errors.lastName = "Please add your last name.";
-  if (!values.email.trim()) errors.email = "Please add an email address.";
-  else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email.trim()))
-    errors.email = "That doesn't look like an email address.";
-  if (values.phone && values.phone.replace(/\D/g, "").length < 10)
-    errors.phone = "A phone number needs 10 digits.";
-  if (!values.subject.trim()) errors.subject = "Please add a subject.";
-  if (!values.message.trim()) errors.message = "Please write a message.";
-  return errors;
-}
-
-type Stage = "closed" | "prompt" | "form";
-
-/**
- * Routes that never auto-open the form.
+ * Routes that never auto-open the card.
  *
  * All three already end in a contact section with the phone number, the
  * email and the office on it, so the interruption buys nothing it isn't
@@ -93,99 +35,40 @@ type Stage = "closed" | "prompt" | "form";
  * Interrupting a reader to ask whether they need help is how a helper turns
  * into a nuisance, which is the same reasoning as `autoOpenSpent` below.
  *
- * The docked button stays on every route. This suppresses the ambush, not the
- * widget.
+ * This suppresses the ambush, not the widget: the button stays on all of them.
  */
 const NO_AUTO_OPEN = ["/about", "/contact", "/communities/fort-worth"];
 
 /**
- * Which stage the form is at, hoisted out of the widget.
+ * Routes with no button either.
  *
- * The widget is the last thing in the layout, but the things that open it —
- * the "Send a message" button ending the home and about pages — are rendered
- * above it, so they cannot reach its state directly. The stage lives here
- * instead and both sides read it.
- *
- * Only the stage is lifted. The field values, errors and submitted flag stay
- * inside the widget: nothing outside it has any business with a half-typed
- * form, and a provider re-render on every keystroke is worth avoiding.
+ * Only /contact, and only because that page is already the number, the email
+ * and the form, set into the page and read in order. A button floating over it
+ * offering the number a third time is the site talking over itself.
  */
-type MessageForm = {
-  stage: Stage;
-  setStage: React.Dispatch<React.SetStateAction<Stage>>;
-  /** Open the form. Pass the element that opened it so focus can go back. */
-  openForm: (trigger?: HTMLElement | null) => void;
-  /** Whatever opened it, or null when that was the docked button. */
-  triggerRef: React.MutableRefObject<HTMLElement | null>;
-};
+const NO_DOCK = ["/contact"];
 
-const MessageFormContext = createContext<MessageForm | null>(null);
-
-/**
- * Wraps the whole layout so anything on the page can open the form.
- *
- * `children` is a prop rather than JSX built in here, so the page tree is
- * already-created elements by the time this renders. Opening the form changes
- * `stage` and re-renders the provider, but React bails out on children whose
- * element reference hasn't changed — the page itself does not re-render.
- */
-export function MessageProvider({ children }: { children: React.ReactNode }) {
-  const [stage, setStage] = useState<Stage>("closed");
-  const triggerRef = useRef<HTMLElement | null>(null);
-
-  const openForm = useCallback((trigger?: HTMLElement | null) => {
-    triggerRef.current = trigger ?? null;
-    setStage("form");
-  }, []);
-
-  const value = useMemo(
-    () => ({ stage, setStage, openForm, triggerRef }),
-    [stage, openForm]
-  );
-
-  return (
-    <MessageFormContext.Provider value={value}>
-      {children}
-    </MessageFormContext.Provider>
-  );
-}
-
-export function useMessageForm() {
-  const ctx = useContext(MessageFormContext);
-  if (!ctx) {
-    throw new Error("useMessageForm must be used inside <MessageProvider>.");
-  }
-  return ctx;
-}
+const telHref = `tel:${site.phone.replace(/[^0-9+]/g, "")}`;
 
 export function MessageWidget() {
-  const { stage, setStage, openForm, triggerRef } = useMessageForm();
-  const open = stage !== "closed";
-  const [values, setValues] = useState<Record<Field, string>>(EMPTY);
-  const [errors, setErrors] = useState<Partial<Record<Field, string>>>({});
-  const [submitted, setSubmitted] = useState(false);
-
-  const firstFieldRef = useRef<HTMLInputElement>(null);
-  const openerRef = useRef<HTMLButtonElement>(null);
+  const [open, setOpen] = useState(false);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const phoneRef = useRef<HTMLAnchorElement>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
   const uid = useId();
-  const fid = (name: string) => `${uid}-${name}`;
+  const cardId = `${uid}-card`;
+  const titleId = `${uid}-title`;
   const pathname = usePathname();
 
-  // Set once the form has shown itself, and never unset. Being dismissed is an
+  // Set once the card has shown itself, and never unset. Being dismissed is an
   // answer; asking again is how a helper turns into a nuisance.
   const autoOpenSpent = useRef(false);
 
-  const close = useCallback(() => {
+  const close = useCallback((restoreFocus = true) => {
     autoOpenSpent.current = true;
-    setStage("closed");
-    // Focus goes back to whatever opened this — the "Send a message" button at
-    // the end of the page if that was it, the dock otherwise. Handing it back
-    // to the dock regardless would silently jump the reader to the corner of
-    // the screen from wherever they actually were.
-    const restoreTo = triggerRef.current ?? openerRef.current;
-    triggerRef.current = null;
-    restoreTo?.focus({ preventScroll: true });
-  }, [setStage, triggerRef]);
+    setOpen(false);
+    if (restoreFocus) buttonRef.current?.focus({ preventScroll: true });
+  }, []);
 
   /**
    * Open once the reader is more than 40% of the way down.
@@ -194,9 +77,12 @@ export function MessageWidget() {
    * height, so it means "40% of the way through" on any screen instead of
    * firing at a fixed pixel depth. A page too short to scroll never triggers,
    * and neither does a route in NO_AUTO_OPEN.
+   *
+   * Focus is left where it is: the card arrived uninvited, so it does not get
+   * to take the caret out of whatever the reader was doing.
    */
   useEffect(() => {
-    if (NO_AUTO_OPEN.includes(pathname)) return;
+    if (NO_AUTO_OPEN.includes(pathname) || NO_DOCK.includes(pathname)) return;
 
     const onScroll = () => {
       if (autoOpenSpent.current) return;
@@ -205,12 +91,7 @@ export function MessageWidget() {
       if (scrollable <= 0) return;
       if (window.scrollY / scrollable >= OPEN_AT) {
         autoOpenSpent.current = true;
-        // Opening by itself must not take the screen. On a phone that means
-        // the prompt — four lines and two ways to answer — and the form only
-        // if it is asked for. With room to spare, go straight to the form.
-        setStage(
-          window.matchMedia("(min-width: 640px)").matches ? "form" : "prompt"
-        );
+        setOpen(true);
       }
     };
     window.addEventListener("scroll", onScroll, { passive: true });
@@ -220,439 +101,146 @@ export function MessageWidget() {
 
   useEffect(() => {
     if (!open) return;
-    if (stage === "form") firstFieldRef.current?.focus({ preventScroll: true });
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") close();
     };
+    // Anywhere else is a dismissal. There is no scrim to click — the page is
+    // live behind the card — so the click that dismisses it also does whatever
+    // it was going to do, and focus stays wherever that click put it.
+    const onPointerDown = (e: PointerEvent) => {
+      if (!rootRef.current?.contains(e.target as Node)) close(false);
+    };
     document.addEventListener("keydown", onKey);
-    // The centred form holds the page still behind it. The prompt does not —
-    // it is an offer sitting in the corner, and freezing the page for it would
-    // be the widget seizing the screen it was written to avoid seizing.
-    //
-    // Locking pairs with a padding-right equal to the scrollbar that just
-    // disappeared; without it the whole page jumps sideways as it opens.
-    if (stage !== "form") {
-      return () => document.removeEventListener("keydown", onKey);
-    }
-    const gap = window.innerWidth - document.documentElement.clientWidth;
-    const prevOverflow = document.body.style.overflow;
-    const prevPad = document.body.style.paddingRight;
-    document.body.style.overflow = "hidden";
-    if (gap > 0) document.body.style.paddingRight = `${gap}px`;
+    document.addEventListener("pointerdown", onPointerDown);
     return () => {
       document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = prevOverflow;
-      document.body.style.paddingRight = prevPad;
+      document.removeEventListener("pointerdown", onPointerDown);
     };
-  }, [open, stage, close]);
+  }, [open, close]);
 
-  const set = (name: Field) => (v: string) => {
-    setValues((prev) => ({
-      ...prev,
-      [name]: name === "phone" ? formatPhone(v) : v,
-    }));
-    // Clear the error as soon as the field is touched again — leaving it up
-    // mid-correction reads as the form arguing with the person filling it.
-    setErrors((prev) => (prev[name] ? { ...prev, [name]: undefined } : prev));
-  };
-
-  /**
-   * Validate, then say what actually happens: nothing.
-   *
-   * The fields are still checked, so the form behaves like the real thing and
-   * can be demonstrated properly — but there is no endpoint, no mailto and no
-   * storage behind it, and the confirmation says so rather than showing a
-   * "Message sent" that would be a lie.
-   */
-  function submit(e: React.FormEvent) {
-    e.preventDefault();
-    const found = validate(values);
-    setErrors(found);
-    if (Object.keys(found).length) {
-      const order: Field[] = [
-        "firstName",
-        "lastName",
-        "email",
-        "phone",
-        "subject",
-        "message",
-      ];
-      const first = order.find((f) => found[f]);
-      if (first) document.getElementById(fid(first))?.focus();
-      return;
-    }
-    setSubmitted(true);
-  }
-
-  const reset = () => {
-    setValues(EMPTY);
-    setErrors({});
-    setSubmitted(false);
-  };
+  if (NO_DOCK.includes(pathname)) return null;
 
   return (
-    <>
-      {/* The dock. Above the header (z-50) and the map pop-out. */}
+    /* Both pieces in one bottom-anchored column, so the card sits on the button
+       rather than being positioned to guess where the button is. Above the
+       header (z-50) and the map pop-out.
+
+       The container spans the width to cap the card on a phone, so it must not
+       swallow clicks along the bottom of the page: pointer events are off here
+       and back on for the two things that want them. */
+    <div
+      ref={rootRef}
+      className="pointer-events-none fixed bottom-5 left-5 right-5 z-[60] flex flex-col items-end gap-3 sm:bottom-7 sm:left-7 sm:right-7"
+    >
+      {open && (
+        <div
+          id={cardId}
+          role="dialog"
+          aria-labelledby={titleId}
+          className="pointer-events-auto relative w-full max-w-[23rem] origin-bottom-right rounded-[4px] border border-ink/12 bg-limestone-pale px-6 pb-5 pt-6 text-center shadow-[0_20px_50px_rgba(27,36,55,0.28)] motion-safe:animate-[pop-in_260ms_cubic-bezier(0.2,0.9,0.3,1.15)]"
+        >
+          <button
+            type="button"
+            onClick={() => close()}
+            aria-label="Close"
+            className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-[3px] text-ink-muted transition-colors hover:bg-limestone-deep hover:text-ink"
+          >
+            <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" aria-hidden="true">
+              <path
+                d="M2 2l12 12M14 2L2 14"
+                stroke="currentColor"
+                strokeWidth="1.6"
+                fill="none"
+              />
+            </svg>
+          </button>
+
+          <h2
+            id={titleId}
+            className="text-[15px] leading-relaxed text-ink-soft"
+          >
+            Do you have questions?
+            <br />
+            Call or text today, we are here to help!
+          </h2>
+
+          <a
+            ref={phoneRef}
+            href={telHref}
+            className="mt-4 flex items-center justify-center gap-2.5 text-ink transition-colors hover:text-brass-deep"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              className="h-5 w-5 shrink-0 text-brass-deep"
+              aria-hidden="true"
+            >
+              <path
+                d="M6.5 3.5h3l1.5 4-2 1.5a12 12 0 0 0 6 6l1.5-2 4 1.5v3a2 2 0 0 1-2.2 2A17 17 0 0 1 4.5 5.7a2 2 0 0 1 2-2.2Z"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinejoin="round"
+              />
+            </svg>
+            <span className="display text-[26px] leading-none">
+              {site.phone}
+            </span>
+          </a>
+
+          {/* The number above is the only thing here that does anything, so the
+              consent it carries has to be readable next to it rather than
+              filed somewhere else. */}
+          <p className="mt-5 text-[10px] leading-snug text-ink-muted">
+            I agree to be contacted by {site.name} via text, call &amp; email.
+            To opt out, reply &lsquo;stop&rsquo; or click unsubscribe.
+          </p>
+        </div>
+      )}
+
+      {/* Round, brass, and stays put while the card is open — the card is
+          attached to it, and a button that vanishes under its own panel leaves
+          nothing to press to put the panel away.
+
+          The mark's own gold rather than the pale gold of .btn-brass: this one
+          floats over whatever the page happens to be under it, ink sections
+          included, and the pale tint reads as washed-out limestone there. Matte,
+          like every other brass on the site — a pigment, never a gradient. The
+          shadow is tinted with it so the button doesn't sit in a grey halo. */}
       <button
-        ref={openerRef}
+        ref={buttonRef}
         type="button"
-        onClick={() => openForm(null)}
+        onClick={() => {
+          if (open) {
+            close();
+            return;
+          }
+          autoOpenSpent.current = true;
+          setOpen(true);
+          // Opened on purpose, so the number is what was asked for.
+          requestAnimationFrame(() =>
+            phoneRef.current?.focus({ preventScroll: true })
+          );
+        }}
         aria-expanded={open}
+        aria-controls={open ? cardId : undefined}
         aria-haspopup="dialog"
-        className={`fixed bottom-5 right-5 z-[60] flex items-center gap-2.5 rounded-[3px] bg-ink px-5 py-3.5 font-mono text-[12px] uppercase tracking-widest text-limestone-pale shadow-[0_10px_30px_rgba(27,36,55,0.35)] transition-opacity duration-200 hover:bg-ink-soft sm:bottom-7 sm:right-7 ${
-          open ? "pointer-events-none opacity-0" : "opacity-100"
-        }`}
+        aria-label={open ? "Close the contact card" : `Call or text ${site.phone}`}
+        className="pointer-events-auto flex h-14 w-14 items-center justify-center rounded-full bg-brass text-ink shadow-[0_10px_30px_rgba(110,90,14,0.4)] transition-colors duration-200 hover:bg-brass-pale"
       >
-        <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          className="h-6 w-6"
+          aria-hidden="true"
+        >
           <path
-            d="M21 11.5a8.4 8.4 0 0 1-8.5 8.3 8.7 8.7 0 0 1-3.9-.9L3 20.5l1.7-4.8a8.2 8.2 0 0 1-1.2-4.2A8.4 8.4 0 0 1 12 3.2a8.4 8.4 0 0 1 9 8.3Z"
+            d="M6.5 3.5h3l1.5 4-2 1.5a12 12 0 0 0 6 6l1.5-2 4 1.5v3a2 2 0 0 1-2.2 2A17 17 0 0 1 4.5 5.7a2 2 0 0 1 2-2.2Z"
             stroke="currentColor"
             strokeWidth="1.5"
             strokeLinejoin="round"
           />
         </svg>
-        Send a message
       </button>
-
-      {/* The prompt. Only ever appears by itself, on a phone, and only asks —
-          four lines in the corner, no scrim, page still scrollable behind it.
-          `left-4 right-4` with `ml-auto` spans the width on a phone and caps on
-          anything wider; there is no vw arithmetic here, so nothing can hang a
-          hairline past the viewport edge. */}
-      {stage === "prompt" && (
-        <div
-          role="dialog"
-          aria-labelledby={fid("prompt-title")}
-          className="fixed bottom-4 left-4 right-4 z-[61] ml-auto max-w-[24rem] rounded-[4px] border border-ink/12 bg-limestone-pale p-5 shadow-[0_20px_50px_rgba(27,36,55,0.28)] motion-safe:animate-[pop-in_280ms_cubic-bezier(0.2,0.9,0.3,1.15)]"
-        >
-          <div className="flex items-start justify-between gap-3">
-            <h2
-              id={fid("prompt-title")}
-              className="display text-2xl leading-tight text-ink"
-            >
-              Speak with {site.agent.split(" ")[0]}
-            </h2>
-            <button
-              type="button"
-              onClick={close}
-              aria-label="Close"
-              className="-mr-1.5 -mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-[3px] text-ink-muted transition-colors hover:bg-limestone-deep hover:text-ink"
-            >
-              <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" aria-hidden="true">
-                <path
-                  d="M2 2l12 12M14 2L2 14"
-                  stroke="currentColor"
-                  strokeWidth="1.6"
-                  fill="none"
-                />
-              </svg>
-            </button>
-          </div>
-
-          <p className="mt-2 text-sm leading-relaxed text-ink-soft">
-            Tell us what you&apos;re looking for and someone from the office
-            will come back to you — usually the same day.
-          </p>
-
-          <div className="mt-4 space-y-2.5">
-            <button
-              type="button"
-              onClick={() => setStage("form")}
-              className="btn-solid w-full"
-            >
-              Leave your details
-            </button>
-            <a
-              href={`tel:${site.phone.replace(/[^0-9]/g, "")}`}
-              className="btn-line w-full gap-2"
-            >
-              <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
-                <path
-                  d="M6.5 3.5h3l1.5 4-2 1.5a12 12 0 0 0 6 6l1.5-2 4 1.5v3a2 2 0 0 1-2.2 2A17 17 0 0 1 4.5 5.7a2 2 0 0 1 2-2.2Z"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinejoin="round"
-                />
-              </svg>
-              Call {site.phone}
-            </a>
-          </div>
-        </div>
-      )}
-
-      {stage === "form" && (
-        <div className="fixed inset-0 z-[61] flex items-center justify-center p-4">
-          <button
-            type="button"
-            aria-label="Close the message form"
-            onClick={close}
-            className="absolute inset-0 cursor-default bg-ink/55 backdrop-blur-[3px] motion-safe:animate-[fade-in_200ms_ease-out]"
-          />
-
-          {/* Centred, and sized so the whole form is on screen. max-h is a
-              safety net for short landscape phones, not the normal case. */}
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby={fid("title")}
-            className="relative flex max-h-[92dvh] w-full max-w-[32rem] flex-col overflow-hidden rounded-[4px] border border-ink/12 bg-limestone-pale shadow-[0_30px_70px_rgba(27,36,55,0.4)] motion-safe:animate-[pop-in_260ms_cubic-bezier(0.2,0.9,0.3,1.15)]"
-          >
-            <div className="flex items-start justify-between gap-3 border-b border-ink/10 px-5 py-3 sm:px-6">
-              <div>
-                <p className="label">Send a message</p>
-                <h2
-                  id={fid("title")}
-                  className="display mt-1 text-xl leading-tight text-ink"
-                >
-                  Tell us what you&apos;re looking for
-                </h2>
-              </div>
-              <button
-                type="button"
-                onClick={close}
-                aria-label="Close"
-                className="-mr-1.5 -mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-[3px] text-ink-muted transition-colors hover:bg-limestone-deep hover:text-ink"
-              >
-                <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" aria-hidden="true">
-                  <path
-                    d="M2 2l12 12M14 2L2 14"
-                    stroke="currentColor"
-                    strokeWidth="1.6"
-                    fill="none"
-                  />
-                </svg>
-              </button>
-            </div>
-
-            {submitted ? (
-              <div className="flex flex-col items-center gap-4 px-6 py-10 text-center">
-                <span
-                  aria-hidden="true"
-                  className="flex h-12 w-12 items-center justify-center rounded-full border border-brass-deep/40"
-                >
-                  <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 text-brass-deep">
-                    <path
-                      d="M12 8.5v4.5m0 3.2v.1M12 3.5l9 15.5H3l9-15.5Z"
-                      stroke="currentColor"
-                      strokeWidth="1.6"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                </span>
-                <div>
-                  <p className="display text-2xl text-ink">Nothing was sent</p>
-                  <p className="mx-auto mt-3 max-w-sm text-sm leading-relaxed text-ink-soft">
-                    This site is built for demonstration purposes. The form
-                    works, but it isn&apos;t connected to anything yet — your
-                    message has not been sent anywhere and no details have been
-                    stored.
-                  </p>
-                  <p className="mt-4 text-sm leading-relaxed text-ink-soft">
-                    To reach the office for real, call{" "}
-                    <a
-                      href={`tel:${site.phone.replace(/[^0-9]/g, "")}`}
-                      className="text-ink underline decoration-ink/30 underline-offset-2 hover:decoration-ink"
-                    >
-                      {site.phone}
-                    </a>{" "}
-                    or email{" "}
-                    <a
-                      href={`mailto:${site.email}`}
-                      className="break-words text-ink underline decoration-ink/30 underline-offset-2 hover:decoration-ink"
-                    >
-                      {site.email}
-                    </a>
-                    .
-                  </p>
-                </div>
-                <div className="mt-1 flex flex-wrap justify-center gap-3">
-                  <button type="button" onClick={reset} className="btn-line">
-                    Back to the form
-                  </button>
-                  <button type="button" onClick={close} className="btn-solid">
-                    Close
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <form
-                onSubmit={submit}
-                noValidate
-                className="overflow-y-auto px-5 py-4 sm:px-6"
-              >
-                <fieldset className="border-0 p-0">
-                  <legend className="label mb-2">Name</legend>
-                  {/* Two columns at every width. They are short fields, and
-                      stacking them is a whole row of height the modal spends
-                      better on keeping the rest of the form unscrolled. */}
-                  <div className="grid grid-cols-2 gap-2.5">
-                    <TextField
-                      id={fid("firstName")}
-                      ref={firstFieldRef}
-                      label="First name"
-                      required
-                      value={values.firstName}
-                      onChange={set("firstName")}
-                      error={errors.firstName}
-                      autoComplete="given-name"
-                    />
-                    <TextField
-                      id={fid("lastName")}
-                      label="Last name"
-                      required
-                      value={values.lastName}
-                      onChange={set("lastName")}
-                      error={errors.lastName}
-                      autoComplete="family-name"
-                    />
-                  </div>
-                </fieldset>
-
-                <div className="mt-2.5 space-y-2.5">
-                  <TextField
-                    id={fid("email")}
-                    label="Email address"
-                    required
-                    type="email"
-                    inputMode="email"
-                    value={values.email}
-                    onChange={set("email")}
-                    error={errors.email}
-                    autoComplete="email"
-                  />
-                  <TextField
-                    id={fid("phone")}
-                    label="Phone"
-                    type="tel"
-                    inputMode="tel"
-                    placeholder="(###) ###-####"
-                    value={values.phone}
-                    onChange={set("phone")}
-                    error={errors.phone}
-                    autoComplete="tel"
-                  />
-                  <TextField
-                    id={fid("subject")}
-                    label="Subject"
-                    required
-                    value={values.subject}
-                    onChange={set("subject")}
-                    error={errors.subject}
-                  />
-                  <TextField
-                    id={fid("message")}
-                    label="Message"
-                    required
-                    multiline
-                    value={values.message}
-                    onChange={set("message")}
-                    error={errors.message}
-                  />
-                </div>
-
-                {/* Above the button, not below it: it is a condition of
-                    pressing, so it has to be readable before you press. */}
-                <p className="mt-3 rounded-[3px] border border-ink/10 bg-limestone/60 p-2.5 text-[10px] leading-snug text-ink-soft">
-                  By providing your telephone number, you are consenting to
-                  allow {site.name}{" "}
-                  to contact you with informational communications via voice
-                  call, AI voice call, and/or text message, or similar
-                  automated means for real estate services.
-                  To opt out reply &lsquo;stop&rsquo; at any time, or
-                  &lsquo;help&rsquo; for assistance. Message and data rates may
-                  apply. Message frequency may vary.
-                </p>
-
-                <button type="submit" className="btn-solid mt-3 w-full">
-                  Submit
-                </button>
-              </form>
-            )}
-          </div>
-        </div>
-      )}
-    </>
+    </div>
   );
 }
-
-type TextFieldProps = {
-  id: string;
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  error?: string;
-  required?: boolean;
-  multiline?: boolean;
-  type?: string;
-  inputMode?: "email" | "tel" | "text";
-  placeholder?: string;
-  autoComplete?: string;
-};
-
-/**
- * One field, one shape. Errors are wired through aria-describedby and
- * announced, and "(required)" is words rather than a bare asterisk so it
- * survives being read aloud.
- */
-const TextField = forwardRef<HTMLInputElement, TextFieldProps>(
-  function TextField(
-    {
-      id,
-      label,
-      value,
-      onChange,
-      error,
-      required,
-      multiline,
-      type = "text",
-      inputMode,
-      placeholder,
-      autoComplete,
-    },
-    ref
-  ) {
-    const errorId = `${id}-error`;
-    const shared = {
-      id,
-      value,
-      placeholder,
-      autoComplete,
-      "aria-required": required || undefined,
-      "aria-invalid": error ? (true as const) : undefined,
-      "aria-describedby": error ? errorId : undefined,
-      onChange: (
-        e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-      ) => onChange(e.target.value),
-      className: `mt-1 w-full rounded-[3px] border bg-limestone/50 px-3 py-[0.45rem] text-[15px] text-ink transition-colors duration-200 placeholder:text-ink-muted/70 focus:outline-none focus:ring-2 focus:ring-brass-deep/40 ${
-        error ? "border-ink/40 bg-limestone-deep/60" : "border-ink/20"
-      }`,
-    };
-
-    return (
-      <div className="min-w-0">
-        <label
-          htmlFor={id}
-          className="block truncate font-mono text-[10px] text-ink-soft"
-        >
-          {label}
-          {required && <span className="ml-1 text-ink-muted">(required)</span>}
-        </label>
-        {multiline ? (
-          <textarea
-            {...shared}
-            rows={3}
-            className={`${shared.className} h-[clamp(2.75rem,8dvh,5rem)] resize-y`}
-          />
-        ) : (
-          <input {...shared} ref={ref} type={type} inputMode={inputMode} />
-        )}
-        {error && (
-          <p id={errorId} role="alert" className="mt-1 font-mono text-[10px] text-ink">
-            {error}
-          </p>
-        )}
-      </div>
-    );
-  }
-);

@@ -526,3 +526,59 @@ html[data-js] .plate-clip img {
     transform: translateY(0) scale(1);
   }
 }
+
+/* ---- The index re-dealing itself when a filter changes.
+ *
+ * Not an entrance: the rows are already on the page when this runs, and the
+ * first paint is handled by the Reveal the whole block sits in. This fires only
+ * after a filter button is pressed, which is the one moment the list changes
+ * under the reader without the page moving — so the rows arrive in order rather
+ * than blinking from one set to another. The stagger is small on purpose; six
+ * rows at 60ms is a beat, not a performance.
+ *
+ * Reduced motion keeps the arrival and drops the travel, the same trade the
+ * scroll reveals make above. ---- */
+@keyframes row-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.row-in {
+  animation: row-in 420ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .row-in {
+    animation: fade-in 320ms ease-out both !important;
+  }
+}
+
+/* ---- A rule that draws itself when its block arrives.
+ *
+ * The hero's datum does this on load (see .animate-draw); this is the same
+ * gesture for a rule further down the page, hung off the Reveal wrapper that
+ * already knows when its block is on screen rather than off an observer of its
+ * own. A survey sheet is ruled before it is written on, so the rule leads the
+ * copy under it by a beat.
+ *
+ * Scoped to html[data-js] like every other hidden state here: with the bundle
+ * dead the rule is simply drawn. ---- */
+.rule-draw {
+  transform-origin: left center;
+  transition: transform 800ms cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+html[data-js] .reveal[data-shown="false"] .rule-draw {
+  transform: scaleX(0);
+}
+@media (prefers-reduced-motion: reduce) {
+  .rule-draw {
+    transition: none !important;
+  }
+  html[data-js] .reveal[data-shown="false"] .rule-draw {
+    transform: none;
+  }
+}

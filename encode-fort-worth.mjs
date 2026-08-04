@@ -54,18 +54,10 @@ const JOBS = [
     width: 900,
     quality: 68,
   },
-  {
-    src: "media/neighbourhood.jpg",
-    file: "public/fort-worth-neighborhood.webp",
-    width: 1300,
-    quality: 72,
-  },
-  {
-    src: "media/neighbourhood.jpg",
-    file: "public/fort-worth-neighborhood-mobile.webp",
-    width: 850,
-    quality: 68,
-  },
+  // The residential street shot is not encoded: it came off the page when the
+  // neighbourhood section went to a single column, and an unreferenced pair of
+  // files in /public still deploys. media/neighbourhood.jpg is kept, so putting
+  // it back is a job entry and a re-run.
   {
     src: "media/stockyard-station.png",
     file: "public/fort-worth-stockyards.webp",

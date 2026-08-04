@@ -39,8 +39,6 @@ const TARGETS = [
   // that sharpen — would quietly hand back a softer file that measured well.
   { file: "public/fort-worth-sundance.webp", src: "media/sudance-square-plaza.png" },
   { file: "public/fort-worth-sundance-mobile.webp", src: "media/sudance-square-plaza.png" },
-  { file: "public/fort-worth-neighborhood.webp", src: "media/neighbourhood.jpg" },
-  { file: "public/fort-worth-neighborhood-mobile.webp", src: "media/neighbourhood.jpg" },
   { file: "public/fort-worth-stockyards.webp", src: "media/stockyard-station.png" },
   { file: "public/fort-worth-stockyards-mobile.webp", src: "media/stockyard-station.png" },
   { file: "public/landmarks/fort-worth.webp" },

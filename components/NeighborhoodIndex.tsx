@@ -2,50 +2,58 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import type { Area } from "@/lib/fortWorth";
+import type { Neighborhood } from "@/lib/fortWorth";
 
 /**
- * The neighbourhood index: twelve places, filtered by part of town.
+ * Six neighbourhoods, filtered by part of town.
  *
- * A schedule, not a card wall. Every entry is a row hung between datum rules
- * with its name in the display face, what it is in the mono utility face, and
- * the read underneath — the same grammar the press list on /about and the
- * service deck use, because a listing sheet is what this site draws.
+ * A schedule, not a card wall. Each entry is a row hung between datum rules
+ * with its name in the display face, the three facts a buyer sorts on set as a
+ * mono readout beside it, and the read underneath — the same grammar the press
+ * list on /about and the service deck use, because a listing sheet is what this
+ * site draws.
  *
- * Why rows rather than the cards the brief sketched: twelve cards is a wall of
- * boxes that all look alike, and the thing a buyer is actually doing here is
- * scanning names to find the two or three worth reading. A schedule is built
- * for scanning. It also means a neighbourhood with a price band and one without
- * sit in the same column without one of them looking broken.
+ * The readout is the point of the row. Price, district and drive time are the
+ * three things every one of these has an answer for, so they sit in a fixed
+ * order on every row and can be compared down the column rather than hunted for
+ * in prose.
  *
  * The filter is progressive: every row is in the static HTML and the buttons
  * only hide rows. With the bundle dead — the failure app/layout.tsx designs
- * around — all twelve stay on the page and only the filtering is lost. That
- * also means a crawler reads all twelve without executing anything.
+ * around — all six stay on the page and only the filtering is lost. That also
+ * means a crawler reads all six without executing anything.
  */
-export function NeighborhoodIndex({ areas }: { areas: Area[] }) {
+export function NeighborhoodIndex({ items }: { items: Neighborhood[] }) {
   // null is "all", which is the state the page loads in.
   const [only, setOnly] = useState<string | null>(null);
+  // How many times the filter has been used. Zero on load, which is what keeps
+  // the rows from playing their own entrance on top of the Reveal the whole
+  // block already sits in — the deal below belongs to the filter, not to the
+  // page arriving. It also re-keys the list, which is what makes the animation
+  // run again on a set of rows React would otherwise reuse in place.
+  const [pass, setPass] = useState(0);
 
-  const shown = only ? areas.filter((a) => a.id === only) : areas;
-  const count = shown.reduce((n, a) => n + a.places.length, 0);
-  const total = areas.reduce((n, a) => n + a.places.length, 0);
+  const pick = (side: string | null) => {
+    setOnly(side);
+    setPass((n) => n + 1);
+  };
+
+  // Derived from the data, in the order the data gives them, so adding a
+  // seventh neighbourhood on a new side of town adds its button too.
+  const sides = [...new Set(items.map((n) => n.side))];
+  const shown = only ? items.filter((n) => n.side === only) : items;
 
   return (
     <div>
-      {/* The filter. Mono, square, and set on the rule — the site's buttons are
-          matte and square everywhere else, so these are too. */}
+      {/* Mono, square, and set on the rule — the site's buttons are matte and
+          square everywhere else, so these are too. */}
       <div className="flex flex-wrap items-center gap-x-2 gap-y-3">
-        <Chip active={only === null} onClick={() => setOnly(null)}>
+        <Chip active={only === null} onClick={() => pick(null)}>
           All of Fort Worth
         </Chip>
-        {areas.map((a) => (
-          <Chip
-            key={a.id}
-            active={only === a.id}
-            onClick={() => setOnly(a.id)}
-          >
-            {a.name}
+        {sides.map((side) => (
+          <Chip key={side} active={only === side} onClick={() => pick(side)}>
+            {side}
           </Chip>
         ))}
       </div>
@@ -55,59 +63,69 @@ export function NeighborhoodIndex({ areas }: { areas: Area[] }) {
           number is the only feedback a screen reader gets that anything
           happened. */}
       <p aria-live="polite" className="mt-6 font-mono text-[11px] text-ink-muted">
-        Showing {count} of {total}
+        Showing {shown.length} of {items.length}
       </p>
 
-      <div className="mt-8">
-        {shown.map((area) => (
-          <section key={area.id} className="mt-12 first:mt-0">
-            <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
-              <h3 className="display-sm text-2xl text-ink">{area.name}</h3>
-              <p className="label">{area.note}</p>
+      <ul key={pass} className="mt-8 border-b border-ink/15">
+        {shown.map((n, i) => (
+          // The whole row steps right under the pointer and its rule inks up
+          // brass — the same cue the press list and the service deck use, and
+          // it belongs to the row rather than to a link inside it because the
+          // row is what you are reading.
+          <li
+            key={n.name}
+            className={`group border-t border-ink/15 ${pass ? "row-in" : ""}`}
+            style={pass ? { animationDelay: `${i * 60}ms` } : undefined}
+          >
+            <div className="py-6 transition-transform duration-300 ease-out group-hover:translate-x-1.5 motion-reduce:group-hover:translate-x-0">
+              <div className="flex flex-wrap items-baseline justify-between gap-x-8 gap-y-2">
+                <h3 className="display-sm text-xl text-ink transition-colors duration-300 group-hover:text-brass-deep sm:text-[1.375rem]">
+                  {n.name}
+                </h3>
+                {/* Price, district, drive — always in that order, and the
+                    separators are decorative so a screen reader reads three
+                    facts rather than a string of interpuncts. */}
+                <p className="font-mono text-[10px] uppercase tracking-widest text-ink-muted transition-colors duration-300 group-hover:text-brass-deep">
+                  {n.band}
+                  {n.district && (
+                    <>
+                      <Dot />
+                      {n.district}
+                    </>
+                  )}
+                  <Dot />~{n.drive} min downtown
+                </p>
+              </div>
+              <p className="mt-3 max-w-2xl leading-relaxed text-ink-soft">
+                {n.blurb}
+              </p>
             </div>
-
-            <ul className="mt-6 border-b border-ink/15">
-              {area.places.map((p) => (
-                // The whole row steps right under the pointer and its rule inks
-                // up brass — the same cue the press list and the service deck
-                // use, and it belongs to the row rather than to a link inside
-                // it because the row is what you are reading.
-                <li key={p.name} className="group border-t border-ink/15">
-                  <div className="py-6 transition-transform duration-300 ease-out group-hover:translate-x-1.5 motion-reduce:group-hover:translate-x-0">
-                    <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
-                      <h4 className="display-sm text-xl text-ink transition-colors duration-300 group-hover:text-brass-deep sm:text-[1.375rem]">
-                        {p.name}
-                      </h4>
-                      {/* The band where one exists, the character where one
-                          does not. Never both, and never an invented range —
-                          see the note on `neighborhoods` in lib/fortWorth.ts. */}
-                      <p className="font-mono text-[10px] uppercase tracking-widest text-ink-muted transition-colors duration-300 group-hover:text-brass-deep">
-                        {p.band ?? p.tag}
-                      </p>
-                    </div>
-                    <p className="mt-3 max-w-2xl leading-relaxed text-ink-soft">
-                      {p.blurb}
-                    </p>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </section>
+          </li>
         ))}
-      </div>
+      </ul>
 
       <p className="mt-8 max-w-2xl font-mono text-[11px] leading-relaxed text-ink-muted">
-        One price band is printed here because one is published. The rest carry
-        what the neighbourhood is instead of a range we would be guessing at —{" "}
+        Bands are stated the way the sources state them — two as ranges, two as
+        positions — rather than rounded into a tidy column we would be guessing
+        at.{" "}
         <Link
           href="/contact"
           className="text-brass-deep underline decoration-brass-deep/40 underline-offset-4 transition-colors hover:decoration-brass-deep"
         >
-          ask for current numbers
+          Ask for current numbers
         </Link>{" "}
         on any street here and you will get the real ones.
       </p>
     </div>
+  );
+}
+
+/** The separator between readout facts. Decorative, so it is hidden. */
+function Dot() {
+  return (
+    <span aria-hidden="true" className="mx-2 text-ink-muted/50">
+      ·
+    </span>
   );
 }
 

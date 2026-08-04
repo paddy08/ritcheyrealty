@@ -3,7 +3,6 @@ import { AgentIntro } from "@/components/AgentIntro";
 import { FeaturedListings } from "@/components/FeaturedListings";
 import { HeroBackdrop } from "@/components/HeroBackdrop";
 import { HeroSearch } from "@/components/HeroSearch";
-import { MessageTrigger } from "@/components/MessageTrigger";
 import { NeighborhoodMap } from "@/components/NeighborhoodMap";
 import { Reveal } from "@/components/Reveal";
 import { ReviewScores, Testimonials } from "@/components/Testimonials";
@@ -94,6 +93,12 @@ export default function HomePage() {
           <p className="mt-6 max-w-lg leading-relaxed text-ink-soft">
             A short, honest read on all eight — the character, the schools, and
             what your money buys once you get there.
+          </p>
+          {/* The map carries no marks and no resting panel now, so the way in
+              has to be said rather than shown. Mono and quiet: an instruction,
+              not another paragraph. */}
+          <p className="mt-5 font-mono text-[11px] uppercase tracking-widest text-ink-muted">
+            Tap any town on the map to read it
           </p>
         </Reveal>
         <Reveal className="mt-12" delay={80}>
@@ -191,9 +196,9 @@ export default function HomePage() {
               </dl>
 
               <div className="mt-10 flex flex-wrap gap-4">
-                <MessageTrigger className="btn-brass">
+                <Link href="/contact" className="btn-brass">
                   Send a message
-                </MessageTrigger>
+                </Link>
                 <Link
                   href="/search"
                   className="btn border border-limestone/25 text-limestone hover:bg-limestone-pale hover:text-ink"

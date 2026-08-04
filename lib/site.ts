@@ -23,6 +23,46 @@ export const site = {
 /** One line, the way you'd write it on an envelope. */
 export const officeAddress = `${site.address.street}, ${site.address.locality}, ${site.address.region} ${site.address.postalCode}`;
 
+/**
+ * Kallie's profiles. Taken verbatim from the live ritcheyrealty.com footer and
+ * checked to resolve — real accounts, not placeholders, so they open in a new
+ * tab and are labelled for anyone who cannot see the mark.
+ */
+export const social = [
+  { label: "Facebook", href: "https://www.facebook.com/KallieRitcheyRealty/" },
+  {
+    label: "Instagram",
+    href: "https://www.instagram.com/kallieritcheyrealtor/",
+  },
+  {
+    label: "YouTube",
+    href: "https://www.youtube.com/@kallieritcheyrealtor9612",
+  },
+  { label: "TikTok", href: "https://www.tiktok.com/@kallieritchey_realtor" },
+];
+
+/**
+ * The two notices the Texas Real Estate Commission requires a licence holder to
+ * publish. Not decoration and not optional — every TREC-licensed brokerage site
+ * carries both, which is why they sit in the footer of every page rather than on
+ * a page of their own.
+ *
+ * Both URLs are the live site's own. The consumer notice is served off
+ * ritcheyrealty.com as `/s/TREC.jpg`; it is written absolute here because a
+ * site-relative path would resolve against this domain, where no such file
+ * exists. The IABS form is the brokerage's PDF on Google Drive.
+ */
+export const disclosures = [
+  {
+    label: "Information About Brokerage Services",
+    href: "https://drive.google.com/file/d/1ekeTzkH0wZdisj7rb4Vl4LD7D4UzXJ-N/view?usp=sharing",
+  },
+  {
+    label: "TREC Consumer Protection Notice",
+    href: "https://www.ritcheyrealty.com/s/TREC.jpg",
+  },
+];
+
 // Kallie's title, bio and figures below are taken from ritcheyrealty.com
 // (/about-kallie). Nothing here is invented.
 export const agent = {
@@ -324,10 +364,10 @@ export type Community = {
 };
 
 /*
- * The message widget deliberately has no endpoint. This is a demo build with
+ * The enquiry form deliberately has no endpoint. This is a demo build with
  * no backend — `output: "export"` in next.config.mjs — so the form validates
  * and then tells the visitor plainly that nothing was sent. Wiring it to a
- * real form service is a change to components/MessageWidget.tsx, not a config
+ * real form service is a change to components/MessageForm.tsx, not a config
  * value sitting here pretending to be switched off.
  */
 

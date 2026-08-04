@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { CountUpFigure } from "@/components/CountUpFigure";
 import type { Stat } from "@/lib/fortWorth";
 
 const STEP = 70; // ms between marks
@@ -90,9 +91,11 @@ export function StatLine({ items }: { items: Stat[] }) {
               >
                 {/* The figure sets large enough to carry an ink band on its
                     own, as on the credential line — at caption size the band
-                    reads as an empty stripe with writing in the top of it. */}
+                    reads as an empty stripe with writing in the top of it.
+                    It counts up to itself on the way in, held back to land
+                    with its own tick rather than with the first one. */}
                 <p className="display text-[2.25rem] leading-[1.05] text-limestone-pale sm:text-[2.75rem]">
-                  {s.mark}
+                  <CountUpFigure value={s.mark} delay={i * STEP + 120} />
                 </p>
                 <p className="caption-on-ink mt-4 leading-[1.6]">{s.detail}</p>
                 {/* Brass, not limestone: the direction of travel is the one

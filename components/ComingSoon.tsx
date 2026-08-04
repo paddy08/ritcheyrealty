@@ -5,6 +5,13 @@ type ComingSoonProps = {
   description: string;
   children?: React.ReactNode;
   secondaryCta?: { label: string; href: string } | null;
+  /**
+   * Promote the CTA to the solid button and demote "Back home" to the outline.
+   * Off by default: on a page with nothing behind it yet, leaving is the honest
+   * lead. Turn it on where the CTA goes somewhere genuinely written, so the page
+   * points at the thing that exists rather than at the way out.
+   */
+  ctaLeads?: boolean;
 };
 
 /**
@@ -17,7 +24,12 @@ export function ComingSoon({
   description,
   children,
   secondaryCta = { label: "Get in touch", href: "/contact" },
+  ctaLeads = false,
 }: ComingSoonProps) {
+  // The solid button leads, so the order follows the emphasis rather than
+  // being fixed — a demoted "Back home" sitting in front of the primary would
+  // read as the first thing to do.
+  const lead = ctaLeads && secondaryCta;
   return (
     <section className="container-edge flex min-h-dvh flex-col justify-center pb-24 pt-40 md:pb-32">
       <p className="label">Coming soon</p>
@@ -29,10 +41,15 @@ export function ComingSoon({
       </p>
       {children}
       <div className="mt-10 flex flex-wrap gap-4">
-        <Link href="/" className="btn-solid">
+        {lead && (
+          <Link href={secondaryCta.href} className="btn-solid">
+            {secondaryCta.label}
+          </Link>
+        )}
+        <Link href="/" className={lead ? "btn-line" : "btn-solid"}>
           Back home
         </Link>
-        {secondaryCta && (
+        {secondaryCta && !lead && (
           <Link href={secondaryCta.href} className="btn-line">
             {secondaryCta.label}
           </Link>

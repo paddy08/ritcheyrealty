@@ -3,7 +3,6 @@ import Link from "next/link";
 import { CredentialLine } from "@/components/CredentialLine";
 import { Faq } from "@/components/Faq";
 import { JsonLd } from "@/components/JsonLd";
-import { MessageTrigger } from "@/components/MessageTrigger";
 import { RangeLine } from "@/components/RangeLine";
 import { Reveal } from "@/components/Reveal";
 import { ServiceDeck } from "@/components/ServiceDeck";
@@ -607,9 +606,9 @@ export default function AboutPage() {
               </dl>
 
               <div className="mt-10 flex flex-wrap gap-4">
-                <MessageTrigger className="btn-brass">
+                <Link href="/contact" className="btn-brass">
                   Send a message
-                </MessageTrigger>
+                </Link>
                 <Link
                   href="/search"
                   className="btn border border-limestone/25 text-limestone hover:bg-limestone-pale hover:text-ink"

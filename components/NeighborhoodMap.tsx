@@ -72,38 +72,6 @@ function landmarkBox(name: string) {
   };
 }
 
-/** The readout: a paper card, where the coordinates are earned. */
-function Readout({
-  community,
-  className = "",
-}: {
-  community: Community;
-  className?: string;
-}) {
-  return (
-    <div
-      className={`rounded-[3px] border border-ink/15 bg-limestone-pale p-6 ${className}`}
-    >
-      <p className="font-mono text-[11px] tracking-wide text-brass-deep">
-        {formatCoords(community)}
-      </p>
-      <h3 className="display mt-3 text-3xl text-ink">{community.name}</h3>
-      <p className="mt-3 text-sm leading-relaxed text-ink-soft">
-        {community.blurb}
-      </p>
-      {/* Straight to the town's own page where one exists, and to the
-          communities index where it doesn't. See communityHref in lib/site.ts. */}
-      <Link
-        href={communityHref(community.name)}
-        className="mt-6 inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-widest text-ink transition-colors hover:text-brass-deep"
-      >
-        Explore {community.name}
-        <span aria-hidden="true">&rarr;</span>
-      </Link>
-    </div>
-  );
-}
-
 /**
  * The pop-out: one town, taken off the map and read properly.
  *
@@ -114,17 +82,21 @@ function Readout({
  * leaves. The model overlaps the top edge of the card rather than sitting in a
  * separate box above it, so the two read as one object.
  *
- * It covers the map block, not the viewport — deliberately. This is the map's
- * own gesture, not a site-wide modal, and scoping it here means one rule covers
- * both layouts: from md the block is exactly the plate, and below md it also
- * takes in the town strip and the card under the sheet, which is the room the
- * pop-out needs on a phone (the plate alone is a ~190px band there, too short
- * to hold a model and a paragraph).
+ * It covers the viewport. It used to cover the map block instead, which worked
+ * only because the block happened to be tall enough: below md it took in the
+ * town strip and the resting card under the sheet. With that card gone the
+ * block is the plate plus the strip — around 280px on a phone — and a model and
+ * a paragraph do not fit in it. Sizing a dialog off whatever happens to sit
+ * under the map was the fragile part, and this is the fix for it, not a
+ * workaround: the room a modal needs is the screen's to give.
  *
- * Note it must not use `position: fixed` to try for the viewport: Reveal wraps
- * this section in a permanent `translate-y-0`, and a transformed ancestor
- * becomes the containing block for fixed children. It would silently resolve to
- * this same box anyway — better to say so than to appear to ask for more.
+ * `position: fixed` is safe here. A transformed ancestor would capture it, and
+ * Reveal does transform this section — but only while `data-shown="false"`, and
+ * this Reveal does not repeat, so by the time there is anything to open the
+ * transform is gone for good and fixed resolves to the viewport.
+ *
+ * z-[55] puts it over the fixed header (z-50) and under the message dock
+ * (z-[60]), which is the order MessageWidget already documents.
  */
 function PopOut({
   community,
@@ -145,11 +117,10 @@ function PopOut({
       if (e.key === "Escape") onClose();
     };
 
-    // Scrolling away dismisses it. The overlay is anchored to the map block,
-    // so without this a phone user who flicks the page ends up with a blurred,
-    // scrim-covered slab and a half-cut card trailing off the top of the
-    // screen. The threshold keeps an incidental wobble — or the address bar
-    // collapsing on iOS — from closing it out from under a deliberate tap.
+    // Scrolling away dismisses it — a flick is how you back out of this on a
+    // phone, and it costs nothing to honour. The threshold keeps an incidental
+    // wobble, or the address bar collapsing on iOS, from closing it out from
+    // under a deliberate tap.
     const from = window.scrollY;
     const onScroll = () => {
       if (Math.abs(window.scrollY - from) > 80) onClose();
@@ -164,10 +135,10 @@ function PopOut({
   }, [onClose]);
 
   return (
-    <div className="absolute inset-0 z-50">
+    <div className="fixed inset-0 z-[55]">
       {/* The scrim carries the blur itself rather than leaning on the map's own,
-          so the sheet falls back by the same amount over the strip and the card
-          below it as over the plate. Clicking it closes. */}
+          so the whole page falls back by the same amount rather than only the
+          plate. Clicking it closes. */}
       <button
         type="button"
         aria-label={`Close ${community.name}`}
@@ -175,19 +146,27 @@ function PopOut({
         className="absolute inset-0 w-full cursor-default bg-ink/45 backdrop-blur-[6px] motion-safe:animate-[fade-in_220ms_ease-out]"
       />
 
-      <div className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-y-auto p-5">
+      {/* `m-auto` on the child rather than `items-center` on the parent. They
+          centre identically when there is room, but a centred flex item taller
+          than its container overflows equally past both ends and the top half
+          cannot be scrolled back to — auto margins collapse instead of going
+          negative, so the dialog stays reachable at any height. */}
+      <div className="pointer-events-none absolute inset-0 flex justify-center overflow-y-auto p-5">
         <div
           role="dialog"
           aria-modal="true"
           aria-labelledby={`popout-${sprite}`}
-          className="pointer-events-auto relative flex w-full max-w-[19rem] flex-col items-center motion-safe:animate-[pop-in_320ms_cubic-bezier(0.2,0.9,0.3,1.2)] md:max-w-[21rem]"
+          // Sized off the model, not the paragraph. The sprites are wide and
+          // short — 1.12 to 2.24 — so a card-width figure came out a strip.
+          // The dialog is the model's width and the card sits narrower inside
+          // it, which is what makes the building the thing you look at.
+          className="pointer-events-auto relative m-auto flex w-full max-w-[23rem] flex-col items-center motion-safe:animate-[pop-in_320ms_cubic-bezier(0.2,0.9,0.3,1.2)] sm:max-w-[25rem] md:max-w-[29rem] lg:max-w-[33rem]"
         >
-          {/* Anchored to the dialog, not to the overlay's corner. The overlay
-              spans the whole map block, whose top edge sits under the sticky
-              header once the block is scrolled past it — which hid this button
-              outright on a phone. The dialog is always centred in view, and the
-              model is narrower than it, so this corner is both visible and
-              clear of the artwork. */}
+          {/* Anchored to the dialog, not to the overlay's corner, so it travels
+              with the card instead of parking in a screen corner away from it.
+              It sits over the model's top corner, which is why it carries its
+              own solid chip rather than relying on contrast against whatever is
+              behind it. */}
           <button
             ref={closeRef}
             type="button"
@@ -206,17 +185,29 @@ function PopOut({
           </button>
 
           {/* The model overlaps the card's top edge rather than sitting in a
-              box above it, so the two read as one object lifted off the map. */}
+              box above it, so the two read as one object lifted off the map —
+              and it runs wider than the card, which is what keeps it reading as
+              the object the card is captioning.
+
+              Just short of the dialog's full width, leaving the top-right
+              corner for the close button. The height cap is what stops the near
+              square sprites — Keller at 1.12 — from standing so tall on a phone
+              that they push the paragraph off the bottom; it is in `vh` because
+              the overlay is the viewport now, so the two agree. `object-contain`
+              pillarboxes rather than stretching, and since the box is always
+              wider than the sprite's aspect the letterboxing is only ever
+              horizontal — a capped model still sits flush on the card's top
+              edge, exactly like an uncapped one. */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={`/landmarks/${sprite}.webp`}
             alt=""
             aria-hidden="true"
             decoding="async"
-            className="pointer-events-none w-[68%] max-w-[13rem] drop-shadow-[0_14px_22px_rgba(27,36,55,0.45)] md:max-w-[17rem]"
+            className="pointer-events-none w-[94%] max-h-[38vh] object-contain drop-shadow-[0_14px_22px_rgba(27,36,55,0.45)] md:max-h-[46vh]"
           />
 
-          <div className="relative -mt-4 w-full rounded-[3px] border border-ink/15 bg-limestone-pale p-6 text-center shadow-[0_18px_40px_rgba(27,36,55,0.3)]">
+          <div className="relative -mt-5 w-[84%] rounded-[3px] border border-ink/15 bg-limestone-pale p-6 text-center shadow-[0_18px_40px_rgba(27,36,55,0.3)] md:-mt-6 md:p-7">
             <p className="font-mono text-[11px] tracking-wide text-brass-deep">
               {formatCoords(community)}
             </p>
@@ -244,14 +235,15 @@ function PopOut({
 
 export function NeighborhoodMap() {
   // Three pieces of state, because hovering and clicking mean different things.
-  // `active` is what the resting panel reads, and it keeps its last town after
-  // the cursor leaves so the panel never empties. `lifted` is what is standing
-  // on the map, and starts at nothing — otherwise the map loads already
-  // blurred. `opened` is the town taken off the map into the pop-out.
+  // `active` is the last town touched, and all it drives now is which tick is
+  // inked in the phone strip — it survives the cursor leaving, so the strip
+  // remembers where you were. `lifted` is what is standing on the map, and
+  // starts at nothing — otherwise the map loads already blurred. `opened` is
+  // the town taken off the map into the pop-out, which is the only place the
+  // writing appears at all.
   const [active, setActive] = useState(0);
   const [lifted, setLifted] = useState<number | null>(null);
   const [opened, setOpened] = useState<number | null>(null);
-  const currentTown = communities[active];
 
   // Where focus goes back to when the pop-out closes, so a keyboard user is
   // returned to the marker they opened rather than to the top of the document.
@@ -359,43 +351,29 @@ export function NeighborhoodMap() {
               aria-label={`Open ${c.name}: ${c.blurb}`}
               aria-haspopup="dialog"
               aria-expanded={opened === i}
-              className="group absolute cursor-pointer"
+              // No mark at rest. The artwork already names and draws every town,
+              // so a printed dot on top of it was decoration the map didn't need
+              // — and at phone widths eight of them read as specks of dirt on the
+              // sheet. The affordance is the model standing up on hover, and the
+              // focus ring for anyone arriving by keyboard.
+              className="group absolute cursor-pointer rounded-[3px] outline-none focus-visible:ring-2 focus-visible:ring-brass-pale"
               style={{
                 left: `${box.left}%`,
                 top: `${box.top}%`,
                 width: `${box.width}%`,
                 height: `${box.height}%`,
-                // The standing model owns the space; its own marker drops
+                // The standing model owns the space; its own hit area drops
                 // behind it rather than sitting on top of the roof.
                 zIndex: isLifted ? 10 : 15,
               }}
-            >
-              {/* A survey mark at the foot of the landmark: the affordance at
-                  rest, and the point the model stands up from. */}
-              <span
-                aria-hidden="true"
-                className={`absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 rounded-full border-2 border-brass-deep transition-all duration-300 ease-out ${
-                  isLifted
-                    ? "h-3.5 w-3.5 bg-brass opacity-0"
-                    : "h-2.5 w-2.5 bg-limestone-pale/90 opacity-100 group-hover:h-3.5 group-hover:w-3.5 group-hover:bg-brass"
-                }`}
-              />
-            </button>
+            />
           );
         })}
 
-        {/* The reading, top-left — the one corner of this map with no town in
-            it, so the panel covers terrain rather than anything worth seeing.
-            It steps aside for the pop-out, which is the same information said
-            louder; both at once would be the page repeating itself. */}
-        <div
-          className={`absolute left-4 top-4 z-30 hidden w-[17rem] transition-opacity duration-200 md:block lg:left-6 lg:top-6 xl:w-[19rem] ${
-            opened !== null ? "opacity-0" : "opacity-100"
-          }`}
-          aria-hidden={opened !== null}
-        >
-          <Readout community={currentTown} />
-        </div>
+        {/* Nothing is printed over the sheet. The panel that used to sit in this
+            corner said, quietly, what the pop-out says properly a click later —
+            and it covered a corner of artwork to do it. Hovering now only stands
+            the model up; the reading is the reward for taking a town. */}
       </div>
 
       {/* Below md the landmarks are too small to tap accurately, so the same
@@ -408,9 +386,9 @@ export function NeighborhoodMap() {
             <li key={c.name} className="flex-none">
               <button
                 type="button"
-                // Below md the markers on the sheet are too small to hit, so
-                // this strip is the only way in — it opens the town outright
-                // rather than only updating the card underneath.
+                // Below md the hit areas on the sheet are too small to tap
+                // reliably, so this strip is the dependable way in. It opens
+                // the pop-out outright, which is where the writing lives.
                 onClick={(e) => open(i, e.currentTarget)}
                 aria-haspopup="dialog"
                 aria-expanded={opened === i}
@@ -435,13 +413,11 @@ export function NeighborhoodMap() {
         })}
       </ol>
 
-      {/* Under md the panel can't sit on the map, so it sits beneath it. */}
-      <Readout community={currentTown} className="mt-5 md:hidden" />
-
-      {/* Last, and a sibling of the plate rather than a child of it: the plate
-          clips its overflow, and from md the pop-out is exactly the plate
-          anyway. Keyed by town so opening a second one re-runs the animation
-          instead of swapping the contents of a card already on screen. */}
+      {/* Last, and a sibling of the plate rather than a child of it — the plate
+          clips its overflow. It is fixed to the viewport, so where it sits in
+          this tree is only a question of what clips it. Keyed by town so opening
+          a second one re-runs the animation instead of swapping the contents of
+          a card already on screen. */}
       {openedTown && (
         <PopOut
           key={openedTown.name}

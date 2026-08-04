@@ -18,6 +18,9 @@ export default function CommunitiesPage() {
         label: "Read the Fort Worth guide",
         href: "/communities/fort-worth",
       }}
+      // The one written town leads. Everything else on this page is a promise,
+      // so the button that goes somewhere real should be the one that looks it.
+      ctaLeads
     >
       {/* The eight towns, west to east, so the page says what the range is even
           while most of it is unwritten. The one that is written is a link; the
